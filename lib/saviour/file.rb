@@ -55,7 +55,7 @@ module Saviour
       path = uploader.write(@source.read, name)
       @source_was = @source
       @persisted = true
-      @model[@mounted_as] = path
+      path
     end
 
     # Gives you a local copy of the file that is removed afterwards.

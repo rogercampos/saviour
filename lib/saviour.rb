@@ -27,11 +27,12 @@ module Saviour
       end
     end
 
-    before_save do
+    after_save do
       self.class.__saviour_attached_files.each do |column|
         if send(column).changed?
           Config.storage.delete(read_attribute(column)) if read_attribute(column)
-          send(column).write
+          new_path = send(column).write
+          update_column(column, new_path)
         end
       end
     end

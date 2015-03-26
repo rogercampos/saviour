@@ -108,15 +108,14 @@ describe Saviour::File do
       end
     end
 
-    it "assigns path on the model after writing" do
+    it "returns the path" do
       object = Test.new
       file = Saviour::File.new(uploader_klass, object, :file)
       file.assign(double(read: "contents", path: "/my/path/my_file.zip"))
       uploader = double
       allow(file).to receive(:uploader).and_return(uploader)
       expect(uploader).to receive(:write).with("contents", "my_file.zip").and_return("/store/dir/my_file.zip")
-      file.write
-      expect(object[:file]).to eq "/store/dir/my_file.zip"
+      expect(file.write).to eq "/store/dir/my_file.zip"
     end
   end
 

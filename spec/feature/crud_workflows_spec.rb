@@ -77,6 +77,8 @@ describe "saving a new file" do
         expect(a.file.public_uri).to eq a.file.url
       end
     end
+
+    it "don't create anything if save do not completes (halt during before_save)"
   end
 
   describe "deletion" do
@@ -109,5 +111,7 @@ describe "saving a new file" do
         end
       end
     end
+
+    it "don't change anything if save do not completes (halt during before_save)"
   end
 end
