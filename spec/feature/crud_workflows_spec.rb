@@ -78,7 +78,29 @@ describe "saving a new file" do
       end
     end
 
-    it "don't create anything if save do not completes (halt during before_save)"
+    it "don't create anything if save do not completes (halt during before_save)" do
+      klass = Class.new(Test) do
+        attr_accessor :fail_at_save
+        before_save { !fail_at_save }
+        include Saviour
+        attach_file :file, A::TestUploader
+      end
+
+      expect {
+        a = klass.new
+        a.fail_at_save = true
+        a.save!
+      }.to raise_error(ActiveRecord::RecordNotSaved)
+
+      with_test_file("example.xml") do |example, _|
+        a = klass.new
+        a.fail_at_save = true
+        a.file = example
+
+        expect(Saviour::Config.storage).not_to receive(:write)
+        a.save
+      end
+    end
   end
 
   describe "deletion" do
@@ -111,7 +133,5 @@ describe "saving a new file" do
         end
       end
     end
-
-    it "don't change anything if save do not completes (halt during before_save)"
   end
 end

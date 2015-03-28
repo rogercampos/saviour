@@ -5,30 +5,20 @@
 
 - Plays well with AR lifecycle.
   - On assignation an object is instantiated representing the given
-    file. No processing code is executed (very lightweight).
-  - `before_save` the file is uploaded to s3
-  - `after_destroy` the file is removed from s3
-  - `before_validation` the metadata is filled, and possible file
-    renamings happens now
-  - `before_save` processings to change the file and generate versions are run
+    file. No processing code is executed.
+  - `after_save` the file is persisted. If there was a previous file stored, that's removed first.
+  - `after_destroy` the file is removed
 
 - Exposes an api to download the file, operate with it and remove it
   after executing the block.
 
-- The required column is a string column which stores the full file path
-  on s3.
+- The required column is a string column which stores the full file path.
 
-- Metadata is calculated on the fly on `before_validation` and must be
-  preserved by the user if desired.
 
-- `#file` gives you an instance of a subclass of `Saviour::File`. This object
-  can be `persisted?` or not, depending if you called `save` or not on your model.
+FEATURES:
 
-- `#file=` assigns a `File` instance into the mounter. Saviour only remembers the
-  fd you provided and that's what will be used `on save`. Then the fd is `read`ed
-  and the contents used to create the new file. Note that you may change that fd or
-  whatever before calling `save` on the model, Saviour will still persist whatever
-  is available at that fd when the model is saved.
+- Allow to set files from external URLs via UrlWrapper helper. It's an example, the api only requires a "read" method.
+
 
 1.0: Storing files
 1.1: remote_url assignation
@@ -72,55 +62,6 @@ a.image.extension
 a.
 
 
-```
-
-# Example: AR model named attachment:
-
-a = Attachment.new
-a.file = File.open('/home/patata/asd.jpg')
-
-# In this moment `a.file` is an instance of Saviour::File which is not `persisted?`.
-
-a.file.persisted? #=> false
-a.file.read #=> Saviour::RuntimeError 'the file is not persisted'
-a.file.filename #=> Saviour::RuntimeError 'the file is not persisted'
-
-# Calling `write` will trigger the persistence. This automatically occurs on `after_save` the model.
-# At this time is when Saviour reads the file and uses the content to create a new file. The filename and extensions are
-# the same as in the original filename, altought you may change that before calling `write`.
-
-# In the scneario of assigning an IO object, for example, the filename and extension are blank and trying to `write` before
-# assign them will result in an Exception.
-
-a.file.write("/local/path/") # The exact API for `write` depends on the backend. File storage and S3 storage have different apis.
-a.file.persisted? #=> true
-a.file.filename #=> "file1.jpg"
-
-
-
-# Example for IO
-
-a = Attachment.new
-a.file = IO.new('/my/socket')
-
-a.write('/local/path/')  #=> Saviour::NoNameError, You will need to provide a filename and extension before trying to save a file
-                          # comming from an IO.
-
-# The behaviour about when the file ends when reading from stream is the same as `read` from ruby for IO. Firs EOF will be
-considered as termination. For further customization deal with the stream yourself and assign a File instead.
-
-
-
-# Example for an external URL using the UrlWrapper provided by Saviour. This is only an utility class that complains with the
-# previous specification. You can use whatever you want however, as long as it responds to `read` and optionally `path`.
-
-a = Attachment.new
-a.file = Saviour::UrlWrapper.new('http://server.com/file.jpg')
-
-a.file.persisted? #=> false
-
-a.write #=> true, Saviour downloads and assigns the file, using the filename extracted from the URL.
-
 
 -----------------------------
 
@@ -162,12 +103,14 @@ deleting from the storage.
 
 PENDING:
 
-- generation of the URL for both storages
+- include processings on the file to extract information and use this as validation on the current save (ex: validate
+  that the attached file size is under 5 Mb).
+
 - how processors work and how do we call them. Based on content + filename ? What about a fd? Performance?
 - What is a file? Just contents + filename, or shall we extract it to add permissions for example?
 - What about specific stuff per storage. For example s3 has some ACL for each file stored.
 - integration with "mini magick kind" of processors
-- Proposal for managing different storages: use theglobal one that can be overrided on the `attach_file` syntax, like
+- Proposal for managing different storages: use the global one that can be overrided on the `attach_file` syntax, like
   attach_file :image, MyUploader, storage: MyStorage.new
 
   You can provide an object directly or also a Proc, in which case will have a dynamic storage! (we `call` it every time)

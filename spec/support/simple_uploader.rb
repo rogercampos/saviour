@@ -26,3 +26,22 @@ class SimpleUploader < Saviour::BaseUploader
     [contents, filename]
   end
 end
+
+
+class Model < ActiveRecord::Base
+  include Saviour
+
+  attach_file :file, SimpleUploader
+  attach_validation(:file) do |contents|
+    errors.add(:file, "Cannot start with 'A'") if contents.start_with?("A")
+  end
+
+  attach_validation :file, :check_filesize
+
+
+  def check_filesize(contents)
+    if contents.length > 5 * 1024 * 1024
+      errors.add(:file, "Max filesize allowed is 5Mb")
+    end
+  end
+end

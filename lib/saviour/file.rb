@@ -24,11 +24,13 @@ module Saviour
     def public_uri
       persisted? && Config.storage.public_uri(persisted_path)
     end
+
     alias_method :url, :public_uri
 
     def assign(object)
       raise("must respond to `read`") if object && !object.respond_to?(:read)
 
+      @consumed_source = nil
       @source = object
       @persisted = !object
 
@@ -47,12 +49,18 @@ module Saviour
       persisted? && ::File.basename(persisted_path)
     end
 
+    def consumed_source
+      @consumed_source ||= begin
+        @source.read
+      end
+    end
+
 
     def write
       raise "You must provide a source to read from first" unless @source
 
       name = @source.respond_to?(:path) ? ::File.basename(@source.path) : SecureRandom.hex
-      path = uploader.write(@source.read, name)
+      path = uploader.write(consumed_source, name)
       @source_was = @source
       @persisted = true
       path
