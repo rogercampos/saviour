@@ -25,6 +25,7 @@ module Saviour
     def delete(path)
       assert_exists(path)
       ::File.delete(real_path(path))
+      ensure_removed_empty_dir(path)
     end
 
     def exists?(path)
@@ -36,6 +37,7 @@ module Saviour
       ::File.join(@public_uri_prefix, path)
     end
 
+
     private
 
     def real_path(path)
@@ -44,6 +46,16 @@ module Saviour
 
     def assert_exists(path)
       raise "File does not exists: #{path}" unless ::File.file?(real_path(path))
+    end
+
+    def ensure_removed_empty_dir(path)
+      basedir = ::File.dirname(path)
+      return if basedir == "."
+
+      while basedir != "/" && Dir.entries(real_path(basedir)) == [".", ".."]
+        Dir.rmdir(real_path(basedir))
+        basedir = ::File.dirname(basedir)
+      end
     end
   end
 end
