@@ -11,7 +11,7 @@ module Saviour
     def write(contents, filename)
       (self.class.processors || []).each do |processor|
         if processor.respond_to?(:call)
-          contents, filename = processor.call(contents, filename)
+          contents, filename = instance_exec(contents, filename, &processor)
         else
           if processor[1].empty?
             contents, filename = send(processor[0], contents, filename)

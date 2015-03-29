@@ -88,7 +88,16 @@ describe Saviour::File do
     end
 
     describe "filename used" do
-      it "is extracted from source if possible" do
+      it "is extracted from original_filename if possible" do
+        file = Saviour::File.new(uploader_klass, Test.new, :file)
+        file.assign(double(read: "contents", original_filename: 'original.jpg', path: "/my/path/my_file.zip"))
+        uploader = double
+        allow(file).to receive(:uploader).and_return(uploader)
+        expect(uploader).to receive(:write).with("contents", "original.jpg")
+        file.write
+      end
+
+      it "is extracted from path if possible" do
         file = Saviour::File.new(uploader_klass, Test.new, :file)
         file.assign(double(read: "contents", path: "/my/path/my_file.zip"))
         uploader = double
@@ -97,7 +106,7 @@ describe Saviour::File do
         file.write
       end
 
-      it "is random if not provided via path" do
+      it "is random if cannot be guessed" do
         file = Saviour::File.new(uploader_klass, Test.new, :file)
         file.assign(double(read: "contents"))
         allow(SecureRandom).to receive(:hex).and_return("stubbed-random")

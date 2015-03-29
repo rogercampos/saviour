@@ -137,5 +137,30 @@ describe Saviour::BaseUploader do
         subject.write("content", "output.png")
       end
     end
+
+    context do
+      let(:uploader) { Class.new(Saviour::BaseUploader) {
+        def store_dir
+          "/store/dir"
+        end
+
+        def rename(contents, filename)
+          [contents, "#{model.id}_#{filename}"]
+        end
+
+        process do
+          run :rename
+          run { |content, filename| [content, "#{model.name}_#{filename}"] }
+        end
+      } }
+
+      let(:model) { double(id: 8, name: "Robert") }
+      subject { uploader.new(model, :mounted_as) }
+
+      it "can access model from processors" do
+        expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/Robert_8_output.png")
+        subject.write("content", "output.png")
+      end
+    end
   end
 end

@@ -114,3 +114,5 @@ PENDING:
   attach_file :image, MyUploader, storage: MyStorage.new
 
   You can provide an object directly or also a Proc, in which case will have a dynamic storage! (we `call` it every time)
+
+- Raise error if the given uploader does not inherit from Saviour::BaseUploader.

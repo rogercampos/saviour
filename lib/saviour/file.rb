@@ -59,7 +59,13 @@ module Saviour
     def write
       raise "You must provide a source to read from first" unless @source
 
-      name = @source.respond_to?(:path) ? ::File.basename(@source.path) : SecureRandom.hex
+      name = if @source.respond_to?(:original_filename)
+               @source.original_filename
+             elsif @source.respond_to?(:path)
+               ::File.basename(@source.path)
+             else
+               SecureRandom.hex
+             end
       path = uploader.write(consumed_source, name)
       @source_was = @source
       @persisted = true
