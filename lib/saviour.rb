@@ -16,9 +16,10 @@ require 'saviour/config'
 module Saviour
   extend ActiveSupport::Concern
 
+  NoActiveRecordDetected = Class.new(StandardError)
+
   included do
-    raise(RuntimeError, "Error: Include <Saviour> only once in the full class inheritance tree") if self.respond_to?(:__saviour_attached_files)
-    raise(RuntimeError, "Error: ActiveRecord not detected in #{self}") unless self.ancestors.include?(ActiveRecord::Base)
+    raise(NoActiveRecordDetected, "Error: ActiveRecord not detected in #{self}") unless self.ancestors.include?(ActiveRecord::Base)
 
     class_attribute(:__saviour_attached_files, :__saviour_validations)
 
