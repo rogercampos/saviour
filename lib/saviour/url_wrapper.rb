@@ -11,6 +11,10 @@ module Saviour
       open(@uri.to_s).read
     end
 
+    def original_filename
+      ::File.basename(@uri.path)
+    end
+
     def path
       @uri.path
     end

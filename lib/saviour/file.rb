@@ -59,9 +59,9 @@ module Saviour
     def write
       raise "You must provide a source to read from first" unless @source
 
-      name = if @source.respond_to?(:original_filename)
+      name = if @source.respond_to?(:original_filename) && @source.original_filename.present?
                @source.original_filename
-             elsif @source.respond_to?(:path)
+             elsif @source.respond_to?(:path) && @source.path.present?
                ::File.basename(@source.path)
              else
                SecureRandom.hex
