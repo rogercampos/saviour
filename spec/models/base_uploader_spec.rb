@@ -33,7 +33,7 @@ describe Saviour::BaseUploader do
 
   describe ".process" do
     let(:uploader) { Class.new(Saviour::BaseUploader) }
-    subject { uploader.new(:model, :mounted_as) }
+    subject { uploader.new(model: "model", mounted_as: "mounted_as") }
 
     it "defines processors on the class" do
       uploader.process do
@@ -46,7 +46,7 @@ describe Saviour::BaseUploader do
 
   describe "#write" do
     before { allow(Saviour::Config).to receive(:storage).and_return(mocked_storage) }
-    subject { uploader.new(:model, :mounted_as) }
+    subject { uploader.new(model: "model", mounted_as: "mounted_as") }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) }
@@ -155,7 +155,7 @@ describe Saviour::BaseUploader do
       } }
 
       let(:model) { double(id: 8, name: "Robert") }
-      subject { uploader.new(model, :mounted_as) }
+      subject { uploader.new(model: model, mounted_as: "mounted_as") }
 
       it "can access model from processors" do
         expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/Robert_8_output.png")

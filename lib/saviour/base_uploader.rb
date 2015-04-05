@@ -2,10 +2,21 @@ module Saviour
   class BaseUploader
     extend ActiveSupport::Concern
     include Processors::Digest
-    attr_reader :model, :mounted_as
 
-    def initialize(model, mounted_as)
-      @model, @mounted_as = model, mounted_as
+    def initialize(data = {})
+      @data = data
+    end
+
+    def method_missing(name, *args, &block)
+      if @data.key?(name)
+        @data[name]
+      else
+        super
+      end
+    end
+
+    def respond_to?(name, *args)
+      @data.key?(name) || super
     end
 
     def write(contents, filename)
