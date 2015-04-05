@@ -3,8 +3,8 @@ module Saviour
     extend ActiveSupport::Concern
     include Processors::Digest
 
-    def initialize(data = {})
-      @data = data
+    def initialize(opts = {})
+      @data = opts.fetch(:data, {})
     end
 
     def method_missing(name, *args, &block)

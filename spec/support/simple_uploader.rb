@@ -8,12 +8,12 @@ class SimpleUploader < Saviour::BaseUploader
     [contents, "cuca-#{filename}"]
   end
 
-  derive_version(:thumb) do
+  version(:thumb) do
     store_dir { "/default/path/versions" }
     run :resize, with: 10, height: 10
   end
 
-  derive_version(:copy_without_filter)
+  version(:copy_without_filter)
 
   run :filter
 

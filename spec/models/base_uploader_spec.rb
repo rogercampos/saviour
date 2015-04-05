@@ -58,23 +58,23 @@ describe Saviour::BaseUploader do
 
   describe "initialization with data" do
     it "can declare wathever" do
-      uploader = Class.new(Saviour::BaseUploader).new(a: "2", data: "my file")
+      uploader = Class.new(Saviour::BaseUploader).new(data: {a: "2", data: "my file"})
       expect(uploader).to respond_to :a
       expect(uploader).to respond_to :data
       expect(uploader.a).to eq "2"
     end
 
     it do
-      uploader = Class.new(Saviour::BaseUploader).new(a: "2", data: "my file")
+      uploader = Class.new(Saviour::BaseUploader).new(data: {a: "2", data: "my file"})
       expect(uploader).to respond_to :a
 
-      uploader = Class.new(Saviour::BaseUploader).new(name: "johny")
+      uploader = Class.new(Saviour::BaseUploader).new(data: {name: "johny"})
       expect(uploader).not_to respond_to :a
     end
   end
 
   describe "#write" do
-    subject { uploader.new(model: "model", mounted_as: "mounted_as") }
+    subject { uploader.new(data: {model: "model", mounted_as: "mounted_as"}) }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) }
@@ -165,7 +165,7 @@ describe Saviour::BaseUploader do
       } }
 
       let(:model) { double(id: 8, name: "Robert") }
-      subject { uploader.new(model: model, mounted_as: "mounted_as") }
+      subject { uploader.new(data: {model: model, mounted_as: "mounted_as"}) }
 
       it "can access model from processors" do
         expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/Robert_8_output.png")
