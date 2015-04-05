@@ -9,7 +9,7 @@ class SimpleUploader < Saviour::BaseUploader
   end
 
   version(:thumb) do
-    store_dir { "/default/path/versions" }
+    store_dir! { "/default/path/versions" }
     run :resize, with: 10, height: 10
   end
 
@@ -55,6 +55,6 @@ a = Model.new file: File.open("local/path.jpg")
 a.save!
 
 a.file.url
-a.file("").url
+a.file(nil).url
 a.file(:thumb).url
 a.file("thumb").url
