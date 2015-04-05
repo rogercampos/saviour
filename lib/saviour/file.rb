@@ -100,7 +100,7 @@ module Saviour
     private
 
     def uploader
-      @uploader ||= @uploader_klass.new(model: @model, mounted_as: @mounted_as)
+      @uploader ||= @uploader_klass.new(data: {model: @model, mounted_as: @mounted_as})
     end
 
     def persisted_path

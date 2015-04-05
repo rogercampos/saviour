@@ -134,7 +134,7 @@ and passing duplicated data to both processors
 notes:
 
 - Uploader class: Now when initialized you can pass an additional name representing a version. New api method named
- "derived_version(:name) { }" from within a processor definition, that will make the given block act only if the name
+  "version(:name) { }" from within a processor definition, that will make the given block act only if the name
   of the version used to initilaize the uploader matches the given name on the call to derived_version.
 
   This way the same uploader can work in different way depending on the "version" given (if any).
