@@ -1,18 +1,14 @@
 class SimpleUploader < Saviour::BaseUploader
-  def store_dir
-    "/default/path"
+  store_dir! { "/default/path" }
+
+  run :digest_filename
+  run :resize, width: 50, height: 50
+
+  run do |contents, filename|
+    [contents, "cuca-#{filename}"]
   end
 
-  process do
-    run :digest_filename
-    run :resize, width: 50, height: 50
-
-    run do |contents, filename|
-      [contents, "cuca-#{filename}"]
-    end
-
-    run :filter
-  end
+  run :filter
 
   def resize(contents, filename, opts)
     # Save contents into a localfile

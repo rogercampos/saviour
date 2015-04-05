@@ -8,9 +8,11 @@ describe Saviour::BaseUploader do
       end
     }.new
   }
+  before { allow(Saviour::Config).to receive(:storage).and_return(mocked_storage) }
 
-  describe "Builder" do
-    subject { Saviour::BaseUploader::Builder.new }
+
+  describe "DSL" do
+    subject { Class.new(Saviour::BaseUploader) }
 
     it do
       subject.run :hola
@@ -28,24 +30,25 @@ describe Saviour::BaseUploader do
       expect(subject.processors.first).to respond_to :call
       expect(subject.processors.first.call).to eq 5
     end
-  end
 
+    it do
+      subject.store_dir! { "/my/dir" }
+      expect(subject.store_dir.call).to eq "/my/dir"
+    end
 
-  describe ".process" do
-    let(:uploader) { Class.new(Saviour::BaseUploader) }
-    subject { uploader.new(model: "model", mounted_as: "mounted_as") }
+    it do
+      subject.store_dir! :method_to_return_the_dir
+      expect(subject.store_dir).to eq :method_to_return_the_dir
+    end
 
-    it "defines processors on the class" do
-      uploader.process do
-        run :method
-      end
-
-      expect(uploader.processors).to eq [[:method, {}]]
+    it "can use store_dir twice and last prevails" do
+      subject.store_dir! { "/my/dir" }
+      subject.store_dir! { "/my/dir/4" }
+      expect(subject.store_dir.call).to eq "/my/dir/4"
     end
   end
 
   describe "#write" do
-    before { allow(Saviour::Config).to receive(:storage).and_return(mocked_storage) }
     subject { uploader.new(model: "model", mounted_as: "mounted_as") }
 
     context do
@@ -58,9 +61,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        def store_dir
-          "/store/dir"
-        end
+        store_dir! { "/store/dir" }
       } }
 
       it "calls storage write" do
@@ -75,17 +76,13 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        def store_dir
-          "/store/dir"
-        end
+        store_dir! { "/store/dir" }
 
         def resize(contents, filename)
           ["#{contents}-x2", filename]
         end
 
-        process do
-          run :resize
-        end
+        run :resize
       } }
 
       it "calls the processors" do
@@ -97,18 +94,14 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        def store_dir
-          "/store/dir"
-        end
+        store_dir! { "/store/dir" }
 
         def resize(contents, filename)
           ["#{contents}-x2", filename]
         end
 
-        process do
-          run :resize
-          run { |content, filename| ["#{content}_x9", "prefix-#{filename}"] }
-        end
+        run :resize
+        run { |content, filename| ["#{content}_x9", "prefix-#{filename}"] }
       } }
 
       it "respects ordering on processor calling" do
@@ -119,17 +112,13 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        def store_dir
-          "/store/dir"
-        end
+        store_dir! { "/store/dir" }
 
         def resize(contents, filename, opts = {})
           ["#{contents}-#{opts[:width]}-#{opts[:height]}", filename]
         end
 
-        process do
-          run :resize, width: 50, height: 10
-        end
+        run :resize, width: 50, height: 10
       } }
 
       it "calls the method using the stored arguments" do
@@ -140,18 +129,14 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        def store_dir
-          "/store/dir"
-        end
+        store_dir! { "/store/dir" }
 
         def rename(contents, filename)
           [contents, "#{model.id}_#{filename}"]
         end
 
-        process do
-          run :rename
-          run { |content, filename| [content, "#{model.name}_#{filename}"] }
-        end
+        run :rename
+        run { |content, filename| [content, "#{model.name}_#{filename}"] }
       } }
 
       let(:model) { double(id: 8, name: "Robert") }

@@ -20,6 +20,16 @@ module Saviour
     end
 
     def write(contents, filename)
+      if self.class.store_dir
+        store_dir = if self.class.store_dir.respond_to?(:call)
+                      instance_eval(&self.class.store_dir)
+                    else
+                      send(self.class.store_dir)
+                    end
+      else
+        raise RuntimeError, "Please use `store_dir` before trying to write"
+      end
+
       (self.class.processors || []).each do |processor|
         if processor.respond_to?(:call)
           contents, filename = instance_exec(contents, filename, &processor)
@@ -37,34 +47,30 @@ module Saviour
       path
     end
 
-    def store_dir
-      raise NotImplementedError, "Please provide a `store_dir` method in #{self.class}"
-    end
 
+    class << self
+      def store_dir
+        @store_dir
+      end
 
-    class Builder
-      attr_reader :processors
-
-      def initialize
-        @processors = []
+      def processors
+        @processors ||= []
       end
 
       def run(name = nil, opts = {}, &block)
         if block_given?
-          @processors.push(block)
+          processors.push(block)
         else
-          @processors.push([name, opts])
+          processors.push([name, opts])
         end
       end
-    end
 
-    class << self
-      attr_accessor :processors
-
-      def process(&block)
-        builder = Builder.new
-        builder.instance_eval(&block)
-        self.processors = builder.processors
+      def store_dir!(name = nil, &block)
+        if block_given?
+          @store_dir = block
+        else
+          @store_dir = name
+        end
       end
     end
   end

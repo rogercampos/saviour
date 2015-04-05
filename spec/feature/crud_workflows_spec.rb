@@ -6,9 +6,7 @@ describe "saving a new file" do
 
   class A < Test
     class TestUploader < Saviour::BaseUploader
-      def store_dir
-        "/store/dir"
-      end
+      store_dir! { "/store/dir" }
     end
 
     include Saviour
