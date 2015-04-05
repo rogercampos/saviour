@@ -46,6 +46,31 @@ describe Saviour::BaseUploader do
       subject.store_dir! { "/my/dir/4" }
       expect(subject.store_dir.call).to eq "/my/dir/4"
     end
+
+    it "is not accessible from subclasses, works in isolation" do
+      subject.run :hola
+      expect(subject.processors).to eq [[:hola, {}]]
+
+      subclass = Class.new(subject)
+      expect(subclass.processors).to eq []
+    end
+  end
+
+  describe "initialization with data" do
+    it "can declare wathever" do
+      uploader = Class.new(Saviour::BaseUploader).new(a: "2", data: "my file")
+      expect(uploader).to respond_to :a
+      expect(uploader).to respond_to :data
+      expect(uploader.a).to eq "2"
+    end
+
+    it do
+      uploader = Class.new(Saviour::BaseUploader).new(a: "2", data: "my file")
+      expect(uploader).to respond_to :a
+
+      uploader = Class.new(Saviour::BaseUploader).new(name: "johny")
+      expect(uploader).not_to respond_to :a
+    end
   end
 
   describe "#write" do
