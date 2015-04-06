@@ -2,8 +2,9 @@ require 'securerandom'
 
 module Saviour
   class File
-    def initialize(uploader_klass, model, mounted_as)
+    def initialize(uploader_klass, model, mounted_as, version = nil)
       @uploader_klass, @model, @mounted_as = uploader_klass, model, mounted_as
+      @version = version
 
       @persisted = !!persisted_path
       @source_was = @source = nil
@@ -100,7 +101,7 @@ module Saviour
     private
 
     def uploader
-      @uploader ||= @uploader_klass.new(data: {model: @model, mounted_as: @mounted_as})
+      @uploader ||= @uploader_klass.new(version: @version, data: {model: @model, mounted_as: @mounted_as})
     end
 
     def persisted_path
