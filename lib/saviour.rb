@@ -38,7 +38,7 @@ module Saviour
       (self.class.__saviour_attached_files || {}).each do |column, versions|
         if send(column).changed?
           Config.storage.delete(read_attribute(column)) if read_attribute(column)
-          previous_content = send(column).consumed_source
+          previous_content = send(column).send(:consumed_source)
           new_path = send(column).write
           update_column(column, new_path)
 
@@ -57,9 +57,9 @@ module Saviour
         if send(column).changed?
           method_or_blocks.each do |method_or_block|
             if method_or_block.respond_to?(:call)
-              instance_exec(send(column).consumed_source, &method_or_block)
+              instance_exec(send(column).send(:consumed_source), &method_or_block)
             else
-              send(method_or_block, send(column).consumed_source)
+              send(method_or_block, send(column).send(:consumed_source))
             end
           end
         end

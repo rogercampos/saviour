@@ -4,17 +4,20 @@ describe "validations saving a new file" do
   before { Saviour::Config.storage = Saviour::FileStorage.new(local_prefix: @tmpdir, public_uri_prefix: "http://domain.com") }
   after { Saviour::Config.storage = nil }
 
-  class B < Test
-    class TestUploader < Saviour::BaseUploader
+  let(:uploader) {
+    Class.new(Saviour::BaseUploader) {
       store_dir! { "/store/dir" }
-    end
+    }
+  }
 
-    include Saviour
-    attach_file :file, TestUploader
-  end
+  let(:base_klass) {
+    a = Class.new(Test) { include Saviour }
+    a.attach_file :file, uploader
+    a
+  }
 
   it "fails at block validation" do
-    klass = Class.new(B) do
+    klass = Class.new(base_klass) do
       attach_validation(:file) do |contents|
         errors.add(:file, "Cannot start with X") if contents[0] == 'X'
       end
@@ -38,7 +41,7 @@ describe "validations saving a new file" do
 
 
   it "fails at method validation" do
-    klass = Class.new(B) do
+    klass = Class.new(base_klass) do
       attach_validation :file, :check_filesize
 
       def check_filesize(contents)
@@ -63,7 +66,7 @@ describe "validations saving a new file" do
   end
 
   it "combined validatinos" do
-    klass = Class.new(B) do
+    klass = Class.new(base_klass) do
       attach_validation :file, :check_filesize
       attach_validation(:file) do |contents|
         errors.add(:file, "Cannot start with X") if contents[0] == 'X'

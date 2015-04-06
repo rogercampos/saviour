@@ -4,26 +4,29 @@ describe "saving a new file" do
   before { Saviour::Config.storage = Saviour::FileStorage.new(local_prefix: @tmpdir, public_uri_prefix: "http://domain.com") }
   after { Saviour::Config.storage = nil }
 
-  class A < Test
-    class TestUploader < Saviour::BaseUploader
+  let(:uploader) {
+    Class.new(Saviour::BaseUploader) {
       store_dir! { "/store/dir" }
-    end
+    }
+  }
 
-    include Saviour
-    attach_file :file, TestUploader
-  end
+  let(:klass) {
+    a = Class.new(Test) { include Saviour }
+    a.attach_file :file, uploader
+    a
+  }
 
   describe "creation" do
     it do
       with_test_file("example.xml") do |example|
-        a = A.create!
+        a = klass.create!
         expect(a.update_attributes(file: example)).to be_truthy
       end
     end
 
     it do
       with_test_file("example.xml") do |example|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
 
         expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
@@ -32,7 +35,7 @@ describe "saving a new file" do
 
     it do
       with_test_file("example.xml") do |example, real_filename|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
         expect(a[:file]).to eq "/store/dir/#{real_filename}"
       end
@@ -40,7 +43,7 @@ describe "saving a new file" do
 
     it do
       with_test_file("example.xml") do |example|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
 
         example.rewind
@@ -50,7 +53,7 @@ describe "saving a new file" do
 
     it do
       with_test_file("example.xml") do |example|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
 
         expect(a.file.exists?).to be_truthy
@@ -59,7 +62,7 @@ describe "saving a new file" do
 
     it do
       with_test_file("example.xml") do |example, real_filename|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
 
         expect(a.file.filename).to eq real_filename
@@ -68,7 +71,7 @@ describe "saving a new file" do
 
     it do
       with_test_file("example.xml") do |example, real_filename|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
 
         expect(a.file.url).to eq "http://domain.com/store/dir/#{real_filename}"
@@ -81,8 +84,8 @@ describe "saving a new file" do
         attr_accessor :fail_at_save
         before_save { !fail_at_save }
         include Saviour
-        attach_file :file, A::TestUploader
       end
+      klass.attach_file :file, uploader
 
       expect {
         a = klass.new
@@ -104,7 +107,7 @@ describe "saving a new file" do
   describe "deletion" do
     it do
       with_test_file("example.xml") do |example|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
         expect(a.file.exists?).to be_truthy
         expect(a.destroy).to be_truthy
@@ -117,7 +120,7 @@ describe "saving a new file" do
   describe "updating" do
     it do
       with_test_file("example.xml") do |example|
-        a = A.create!
+        a = klass.create!
         a.update_attributes(file: example)
 
         expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
