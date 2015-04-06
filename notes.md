@@ -17,7 +17,7 @@
 
 FEATURES:
 
-- Allow to set files from external URLs via UrlWrapper helper. It's an example, the api only requires a "read" method.
+- Allow to set files from external URLs via UrlSource helper. It's an example, the api only requires a "read" method.
 
 
 1.0: Storing files
@@ -76,9 +76,11 @@ a.
 
 # Saviour::Uploader logic:
 
-manages how to upload a thing to the storage. what content, path and filename. manages hooks and preprocessing.
-Only acts when something has to be saved into the storage. Has nothing to do with retrieving the file, reading or
-deleting from the storage.
+It's initialized with whatever data you want to have accessible from the inside. It's only public method is `write(content, filename)`,
+which you can use to upload the given contents as the given filename using the current `Saviour.storage` backend.
+It manages what additional stuff happens during the upload to the storage, apart from setting the directory. What content,
+path and filename. manages hooks and preprocessing. Only acts when something has to be saved into the storage.
+Has nothing to do with retrieving the file, reading or deleting from the storage.
 
 - sets the store path
 - processing and hooks
@@ -116,3 +118,33 @@ PENDING:
   You can provide an object directly or also a Proc, in which case will have a dynamic storage! (we `call` it every time)
 
 - Raise error if the given uploader does not inherit from Saviour::BaseUploader.
+
+
+
+VERSIONS:
+
+Features:
+
+- When deleting the parent the version is also destroyed
+- shared source, assigning on the parent and saving will trigger both processor chains, reading form the source only once
+and passing duplicated data to both processors
+- "shared" processor definiton with the parent, since the version may be generated from some step within the parent processing. It's easier and avoids repeating.
+
+
+notes:
+
+- Uploader class: Now when initialized you can pass an additional name representing a version. New api method named
+  "version(:name) { }" from within a processor definition, that will make the given block act only if the name
+  of the version used to initilaize the uploader matches the given name on the call to derived_version.
+
+  This way the same uploader can work in different way depending on the "version" given (if any).
+
+- attach_file :file, Uploader, versions: [:a, :b]. Now ths method gains a third argument ":versions". You can declare derived versions.
+  Those columns must exist in the model. Those will operate exactly the same way form the exterior. Only two new features:
+
+  1) Auto remove of the version whe the main file is removed
+  2) Auto assignation of the
+
+- Limitations:
+  * Versions must be in the same folder as the original file.
+  * By default the filename for the version is the same as the parent + suffix with the version name. Can be modified.

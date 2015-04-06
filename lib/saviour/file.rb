@@ -2,8 +2,28 @@ require 'securerandom'
 
 module Saviour
   class File
-    def initialize(uploader_klass, model, mounted_as)
+    class SourceFilenameExtractor
+      def initialize(source)
+        @source = source
+      end
+
+      def detected_filename
+        original_filename || path_filename
+      end
+
+      def original_filename
+        @source.respond_to?(:original_filename) && @source.original_filename.present? && @source.original_filename
+      end
+
+      def path_filename
+        @source.respond_to?(:path) && @source.path.present? && ::File.basename(@source.path)
+      end
+    end
+
+
+    def initialize(uploader_klass, model, mounted_as, version = nil)
       @uploader_klass, @model, @mounted_as = uploader_klass, model, mounted_as
+      @version = version
 
       @persisted = !!persisted_path
       @source_was = @source = nil
@@ -49,35 +69,6 @@ module Saviour
       persisted? && ::File.basename(persisted_path)
     end
 
-    def consumed_source
-      @consumed_source ||= begin
-        @source.read
-      end
-    end
-
-
-    def write
-      raise "You must provide a source to read from first" unless @source
-
-      name = if @source.respond_to?(:original_filename)
-               @source.original_filename
-             elsif @source.respond_to?(:path)
-               ::File.basename(@source.path)
-             else
-               SecureRandom.hex
-             end
-      path = uploader.write(consumed_source, name)
-      @source_was = @source
-      @persisted = true
-      path
-    end
-
-    # Gives you a local copy of the file that is removed afterwards.
-    #
-    # 1. Safe: you're guaranteed to receive a copy of the file, not the original, so you can perform
-    # any operation to modify that file without worrying. If you want to save the results, just reassign and save.
-    #
-    # 2. Used for example to perform operations on the file from external binaries, like imagemagick
     def with_copy
       raise "must be persisted" unless persisted?
 
@@ -97,14 +88,36 @@ module Saviour
     end
 
 
+    def write
+      raise "You must provide a source to read from first" unless @source
+
+      name = SourceFilenameExtractor.new(@source).detected_filename || SecureRandom.hex
+      path = uploader.write(consumed_source, name)
+      @source_was = @source
+      @persisted = true
+      path
+    end
+
+
+    protected
+
+    def consumed_source
+      @consumed_source ||= begin
+        @source.read
+      end
+    end
+
+
     private
 
     def uploader
-      @uploader ||= @uploader_klass.new(model: @model, mounted_as: @mounted_as)
+      @uploader ||= @uploader_klass.new(version: @version, data: {model: @model, mounted_as: @mounted_as})
     end
 
     def persisted_path
-      (@model.persisted? || @model.destroyed?) && @model.read_attribute(@mounted_as)
+      if @model.persisted? || @model.destroyed?
+        @version ? @model.read_attribute("#{@mounted_as}_#{@version}") : @model.read_attribute(@mounted_as)
+      end
     end
   end
 end

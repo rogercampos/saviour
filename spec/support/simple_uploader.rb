@@ -8,6 +8,13 @@ class SimpleUploader < Saviour::BaseUploader
     [contents, "cuca-#{filename}"]
   end
 
+  version(:thumb) do
+    store_dir! { "/default/path/versions" }
+    run :resize, with: 10, height: 10
+  end
+
+  version(:copy_without_filter)
+
   run :filter
 
   def resize(contents, filename, opts)
@@ -27,11 +34,10 @@ end
 class Model < ActiveRecord::Base
   include Saviour
 
-  attach_file :file, SimpleUploader
+  attach_file :file, SimpleUploader, versions: [:thumb, :copy_without_filter]
   attach_validation(:file) do |contents|
     errors.add(:file, "Cannot start with 'A'") if contents.start_with?("A")
   end
-
   attach_validation :file, :check_filesize
 
 
@@ -41,3 +47,14 @@ class Model < ActiveRecord::Base
     end
   end
 end
+
+
+__END__
+
+a = Model.new file: File.open("local/path.jpg")
+a.save!
+
+a.file.url
+a.file(nil).url
+a.file(:thumb).url
+a.file("thumb").url

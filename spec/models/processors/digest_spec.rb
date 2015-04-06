@@ -3,9 +3,7 @@ require 'spec_helper'
 describe Saviour::Processors::Digest do
   describe "#digest_filename" do
     subject {
-      class Test
-        include Saviour::Processors::Digest
-      end.new
+      Class.new { include Saviour::Processors::Digest }.new
     }
 
     let(:filename) { "name.jpg" }
