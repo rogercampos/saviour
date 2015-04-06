@@ -34,11 +34,11 @@ module Saviour
     end
 
     def read
-      persisted? && Config.storage.read(persisted_path)
+      persisted? && exists? && Config.storage.read(persisted_path)
     end
 
     def delete
-      persisted? && Config.storage.delete(persisted_path)
+      persisted? && exists? && Config.storage.delete(persisted_path)
     end
 
     def public_uri
