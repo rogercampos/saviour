@@ -2,7 +2,7 @@ require 'open-uri'
 require 'uri'
 
 module Saviour
-  class UrlWrapper
+  class UrlSource
     def initialize(url)
       @uri = URI(url)
     end

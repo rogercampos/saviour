@@ -17,7 +17,7 @@
 
 FEATURES:
 
-- Allow to set files from external URLs via UrlWrapper helper. It's an example, the api only requires a "read" method.
+- Allow to set files from external URLs via UrlSource helper. It's an example, the api only requires a "read" method.
 
 
 1.0: Storing files

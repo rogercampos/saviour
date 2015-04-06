@@ -12,7 +12,7 @@ require 'saviour/file'
 require 'saviour/file_storage'
 require 'saviour/config'
 require 'saviour/string_source'
-require 'saviour/url_wrapper'
+require 'saviour/url_source'
 
 module Saviour
   extend ActiveSupport::Concern
@@ -28,7 +28,9 @@ module Saviour
       (self.class.__saviour_attached_files || {}).each do |column, versions|
         send(column).delete
 
-        versions.each { |version| send(column, version).delete }
+        versions.each { |version|
+          send(column, version).delete
+        }
       end
     end
 
@@ -42,7 +44,7 @@ module Saviour
 
           versions.each do |version|
             Config.storage.delete(read_attribute("#{column}_#{version}")) if read_attribute("#{column}_#{version}")
-            send(column, version).assign(StringSource.new(previous_content, "#{::File.basename(send(column).filename)}#{::File.extname(send(column).filename)}"))
+            send(column, version).assign(StringSource.new(previous_content, "#{::File.basename(send(column).filename, ".*")}_#{version}#{::File.extname(send(column).filename)}"))
             new_path = send(column, version).write
             update_column("#{column}_#{version}", new_path)
           end

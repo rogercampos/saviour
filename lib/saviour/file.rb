@@ -105,7 +105,9 @@ module Saviour
     end
 
     def persisted_path
-      (@model.persisted? || @model.destroyed?) && @model.read_attribute(@mounted_as)
+      if @model.persisted? || @model.destroyed?
+        @version ? @model.read_attribute("#{@mounted_as}_#{@version}") : @model.read_attribute(@mounted_as)
+      end
     end
   end
 end

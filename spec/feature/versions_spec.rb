@@ -26,4 +26,21 @@ describe "saving a new file" do
       end
     end
   end
+
+  describe "deletion" do
+    it do
+      with_test_file("example.xml") do |example|
+        a = D.create!
+        a.update_attributes(file: example)
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
+
+        a.destroy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_falsey
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_falsey
+      end
+    end
+  end
+
+  describe "changes following main file"
 end
