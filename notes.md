@@ -15,31 +15,6 @@
 - The required column is a string column which stores the full file path.
 
 
-FEATURES:
-
-- Allow to set files from external URLs via UrlSource helper. It's an example, the api only requires a "read" method.
-
-
-1.0: Storing files
-1.1: remote_url assignation
-1.2: metadata processing: mime type, file size, extension, etc.
-1.3: Processing hooks
-1.4: Digest module, append digest to filename
-
-
------------
-
-- Proposal alternate syntax:
-
-class Test < ActiveRecord::Base
-  attach_file(:thumb_image, store_dir: "") do
-    run :resize_to_fit, width: 100, height: 100
-  end
-end
-
------------
-
-
 - You can assign anything that responds to a `read` method in order to retrieve the contents.
   Optionally, if the object responds to `path` that will be used also to construct the filename based on
   `File.basename(object.path)`
@@ -57,7 +32,6 @@ a = Product.new image: File.open('/home/user/file.jpg')
 a.image # => <Saviour::File>
 
 a.image.filename
-a.image.extension
 
 a.
 
@@ -101,12 +75,10 @@ Has nothing to do with retrieving the file, reading or deleting from the storage
 - `delete`: remove a file from the storage given its path
 
 
+
 ----
 
 PENDING:
-
-- include processings on the file to extract information and use this as validation on the current save (ex: validate
-  that the attached file size is under 5 Mb).
 
 - how processors work and how do we call them. Based on content + filename ? What about a fd? Performance?
 - What is a file? Just contents + filename, or shall we extract it to add permissions for example?
@@ -116,8 +88,6 @@ PENDING:
   attach_file :image, MyUploader, storage: MyStorage.new
 
   You can provide an object directly or also a Proc, in which case will have a dynamic storage! (we `call` it every time)
-
-- Raise error if the given uploader does not inherit from Saviour::BaseUploader.
 
 
 
@@ -145,6 +115,5 @@ notes:
   1) Auto remove of the version whe the main file is removed
   2) Auto assignation of the
 
-- Limitations:
-  * Versions must be in the same folder as the original file.
-  * By default the filename for the version is the same as the parent + suffix with the version name. Can be modified.
+- By default the filename for the version is the same as the parent + suffix with the version name. Can be modified
+using `run` inside the verison and changing the filename to something else.
