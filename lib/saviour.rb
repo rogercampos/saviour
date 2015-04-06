@@ -15,6 +15,80 @@ require 'saviour/string_source'
 require 'saviour/url_source'
 
 module Saviour
+  class ModelHooks
+    def initialize(model)
+      @model = model
+    end
+
+    def delete!
+      attached_files.each do |column, versions|
+        @model.send(column).delete
+        versions.each { |version| @model.send(column, version).delete }
+      end
+    end
+
+    def save!
+      attached_files.each do |column, versions|
+        if @model.send(column).changed?
+          name = column_name(column, nil)
+          previous_content = @model.send(column).send(:consumed_source)
+
+          Config.storage.delete(@model[name]) if @model[name]
+          upload_file(column, nil)
+
+          versions.each do |version|
+            name = column_name(column, version)
+
+            Config.storage.delete(@model[name]) if @model[name]
+            @model.send(column, version).assign(StringSource.new(previous_content, version_filename(column, version)))
+            upload_file(column, version)
+          end
+        end
+      end
+    end
+
+    def validate!
+      validations.each do |column, method_or_blocks|
+        if @model.send(column).changed?
+          method_or_blocks.each { |method_or_block| run_validation(column, method_or_block) }
+        end
+      end
+    end
+
+    def version_filename(column, version)
+      "#{::File.basename(@model.send(column).filename, ".*")}_#{version}#{::File.extname(@model.send(column).filename)}"
+    end
+
+    def upload_file(column, version)
+      new_path = @model.send(column, version).write
+      @model.update_column(column_name(column, version), new_path)
+    end
+
+    def column_name(column, version)
+      if version
+        "#{column}_#{version}"
+      else
+        column
+      end
+    end
+
+    def attached_files
+      @model.class.__saviour_attached_files || {}
+    end
+
+    def run_validation(column, method_or_block)
+      if method_or_block.respond_to?(:call)
+        @model.instance_exec(@model.send(column).send(:consumed_source), &method_or_block)
+      else
+        @model.send(method_or_block, @model.send(column).send(:consumed_source))
+      end
+    end
+
+    def validations
+      @model.class.__saviour_validations || {}
+    end
+  end
+
   extend ActiveSupport::Concern
 
   NoActiveRecordDetected = Class.new(StandardError)
@@ -24,47 +98,9 @@ module Saviour
 
     class_attribute(:__saviour_attached_files, :__saviour_validations)
 
-    after_destroy do
-      (self.class.__saviour_attached_files || {}).each do |column, versions|
-        send(column).delete
-
-        versions.each { |version|
-          send(column, version).delete
-        }
-      end
-    end
-
-    after_save do
-      (self.class.__saviour_attached_files || {}).each do |column, versions|
-        if send(column).changed?
-          Config.storage.delete(read_attribute(column)) if read_attribute(column)
-          previous_content = send(column).send(:consumed_source)
-          new_path = send(column).write
-          update_column(column, new_path)
-
-          versions.each do |version|
-            Config.storage.delete(read_attribute("#{column}_#{version}")) if read_attribute("#{column}_#{version}")
-            send(column, version).assign(StringSource.new(previous_content, "#{::File.basename(send(column).filename, ".*")}_#{version}#{::File.extname(send(column).filename)}"))
-            new_path = send(column, version).write
-            update_column("#{column}_#{version}", new_path)
-          end
-        end
-      end
-    end
-
-    validate do
-      (self.class.__saviour_validations || {}).each do |column, method_or_blocks|
-        if send(column).changed?
-          method_or_blocks.each do |method_or_block|
-            if method_or_block.respond_to?(:call)
-              instance_exec(send(column).send(:consumed_source), &method_or_block)
-            else
-              send(method_or_block, send(column).send(:consumed_source))
-            end
-          end
-        end
-      end
-    end
+    after_destroy { ModelHooks.new(self).delete! }
+    after_save { ModelHooks.new(self).save! }
+    validate { ModelHooks.new(self).validate! }
   end
 
   module ClassMethods

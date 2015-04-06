@@ -229,7 +229,7 @@ describe Saviour::BaseUploader do
         } }
 
         it do
-          expect(subject.__store_dir).to eq "/thumb/store/dir"
+          expect(Saviour::BaseUploader::StoreDirExtractor.new(subject).store_dir).to eq "/thumb/store/dir"
         end
       end
 
@@ -241,7 +241,7 @@ describe Saviour::BaseUploader do
         } }
 
         it do
-          expect(subject.__store_dir).to eq "/store/dir/second"
+          expect(Saviour::BaseUploader::StoreDirExtractor.new(subject).store_dir).to eq "/store/dir/second"
         end
       end
 

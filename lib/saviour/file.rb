@@ -116,7 +116,8 @@ module Saviour
 
     def persisted_path
       if @model.persisted? || @model.destroyed?
-        @version ? @model.read_attribute("#{@mounted_as}_#{@version}") : @model.read_attribute(@mounted_as)
+        column_name = ModelHooks.new(@model).column_name(@mounted_as, @version)
+        @model.read_attribute(column_name)
       end
     end
   end
