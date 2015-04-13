@@ -16,25 +16,25 @@ describe Saviour::BaseUploader do
 
     it do
       subject.run :hola
-      expect(subject.processors[0].first.method_or_block).to eq :hola
-      expect(subject.processors[0].second).to eq({})
+      expect(subject.processors[0][:element].method_or_block).to eq :hola
+      expect(subject.processors[0][:opts]).to eq({})
     end
 
     it do
       subject.run :a
       subject.run :resize, width: 50
 
-      expect(subject.processors[0].first.method_or_block).to eq :a
-      expect(subject.processors[0].second).to eq({})
+      expect(subject.processors[0][:element].method_or_block).to eq :a
+      expect(subject.processors[0][:opts]).to eq({})
 
-      expect(subject.processors[1].first.method_or_block).to eq :resize
-      expect(subject.processors[1].second).to eq({width: 50})
+      expect(subject.processors[1][:element].method_or_block).to eq :resize
+      expect(subject.processors[1][:opts]).to eq({width: 50})
     end
 
     it do
       subject.run { 5 }
-      expect(subject.processors[0].method_or_block).to respond_to :call
-      expect(subject.processors[0].method_or_block.call).to eq 5
+      expect(subject.processors[0][:element].method_or_block).to respond_to :call
+      expect(subject.processors[0][:element].method_or_block.call).to eq 5
     end
 
     it do
@@ -56,8 +56,8 @@ describe Saviour::BaseUploader do
 
     it "is not accessible from subclasses, works in isolation" do
       subject.run :hola
-      expect(subject.processors[0].first.method_or_block).to eq :hola
-      expect(subject.processors[0].second).to eq({})
+      expect(subject.processors[0][:element].method_or_block).to eq :hola
+      expect(subject.processors[0][:opts]).to eq({})
 
       subclass = Class.new(subject)
       expect(subclass.processors).to eq []
@@ -70,13 +70,13 @@ describe Saviour::BaseUploader do
           run :resize_to_thumb
         end
 
-        expect(subject.processors[0].first.method_or_block).to eq :hola
-        expect(subject.processors[0].first.version).to eq nil
-        expect(subject.processors[0].second).to eq({})
+        expect(subject.processors[0][:element].method_or_block).to eq :hola
+        expect(subject.processors[0][:element].version).to eq nil
+        expect(subject.processors[0][:opts]).to eq({})
 
-        expect(subject.processors[1].first.method_or_block).to eq :resize_to_thumb
-        expect(subject.processors[1].first.version).to eq :thumb
-        expect(subject.processors[1].second).to eq({})
+        expect(subject.processors[1][:element].method_or_block).to eq :resize_to_thumb
+        expect(subject.processors[1][:element].version).to eq :thumb
+        expect(subject.processors[1][:opts]).to eq({})
       end
 
       it "respects ordering" do
@@ -85,14 +85,14 @@ describe Saviour::BaseUploader do
         subject.run :top_level
         subject.version(:another) { run(:foo) }
 
-        expect(subject.processors[0].first.method_or_block).to eq :hola
-        expect(subject.processors[0].first.version).to eq nil
-        expect(subject.processors[1].first.method_or_block).to eq :resize_to_thumb
-        expect(subject.processors[1].first.version).to eq :thumb
-        expect(subject.processors[2].first.method_or_block).to eq :top_level
-        expect(subject.processors[2].first.version).to eq nil
-        expect(subject.processors[3].first.method_or_block).to eq :foo
-        expect(subject.processors[3].first.version).to eq :another
+        expect(subject.processors[0][:element].method_or_block).to eq :hola
+        expect(subject.processors[0][:element].version).to eq nil
+        expect(subject.processors[1][:element].method_or_block).to eq :resize_to_thumb
+        expect(subject.processors[1][:element].version).to eq :thumb
+        expect(subject.processors[2][:element].method_or_block).to eq :top_level
+        expect(subject.processors[2][:element].version).to eq nil
+        expect(subject.processors[3][:element].method_or_block).to eq :foo
+        expect(subject.processors[3][:element].version).to eq :another
       end
     end
   end
@@ -341,6 +341,55 @@ describe Saviour::BaseUploader do
           expect(Saviour::Config.storage).to receive(:write).with("last_transform_thumb_2_content_altered", "/versions/store/dir/3_output.png")
           a.write("content", "output.png")
         end
+      end
+    end
+  end
+
+  describe "#run_with_file" do
+    subject { uploader.new(data: {model: "model", mounted_as: "mounted_as"}) }
+
+    context do
+      let(:uploader) { Class.new(Saviour::BaseUploader) {
+        store_dir! { "/store/dir" }
+
+        def foo(file, filename)
+          ::File.write(file.path, "modified-contents")
+          [file, filename]
+        end
+
+        run_with_file :foo
+      } }
+
+      it "calls the processors" do
+        expect(subject).to receive(:foo).with(an_instance_of(Tempfile), "output.png").and_call_original
+        expect(Saviour::Config.storage).to receive(:write).with("modified-contents", "/store/dir/output.png")
+        subject.write("contents", "output.png")
+      end
+    end
+
+    context do
+      let(:uploader) { Class.new(Saviour::BaseUploader) {
+        store_dir! { "/store/dir" }
+
+        run do |contents, filename|
+          ["#{contents}_first_run", filename]
+        end
+
+        run_with_file do |file, filename|
+          ::File.write(file.path, "#{::File.read(file.path)}-modified-contents")
+          [file, filename]
+        end
+
+        run :last_run
+
+        def last_run(contents, filename)
+          ["pre-#{contents}", "pre-#{filename}"]
+        end
+      } }
+
+      it "can mix types of runs between file and contents" do
+        expect(Saviour::Config.storage).to receive(:write).with("pre-contents_first_run-modified-contents", "/store/dir/pre-aaa.png")
+        subject.write("contents", "aaa.png")
       end
     end
   end

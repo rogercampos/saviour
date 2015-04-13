@@ -4,6 +4,18 @@ class SimpleUploader < Saviour::BaseUploader
   run :digest_filename
   run :resize, width: 50, height: 50
 
+  run_with_file do |local_file, filename|
+    # You're passed a File object pointing to a temporal file containing the current contents
+
+    # Modify the passed file
+    # `mogrify -resize '40x40' #{local_file.path}`
+
+    # You must return a File object and a filename. We'll use the contents you left on that file.
+    # you can return a different file from the one you received, but then it's up to you to remove that temporal file (if it's temporal)
+    # We won't cleanup that, since you created it.
+    [local_file, filename]
+  end
+
   run do |contents, filename|
     [contents, "cuca-#{filename}"]
   end
