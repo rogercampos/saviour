@@ -81,7 +81,7 @@ class MockedS3Helper
     !!directory.files.head(path)
   end
 
-  def public_uri(path)
+  def public_url(path)
     directory.files.get(path).public_url
   end
 

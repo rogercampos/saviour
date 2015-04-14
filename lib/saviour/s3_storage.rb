@@ -32,7 +32,7 @@ module Saviour
       !!directory.files.head(path)
     end
 
-    def public_uri(path)
+    def public_url(path)
       path = sanitize_leading_slash(path)
       assert_exists(path)
       directory.files.get(path).public_url

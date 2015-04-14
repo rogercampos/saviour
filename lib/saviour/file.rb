@@ -41,11 +41,11 @@ module Saviour
       persisted? && exists? && Config.storage.delete(persisted_path)
     end
 
-    def public_uri
-      persisted? && Config.storage.public_uri(persisted_path)
+    def public_url
+      persisted? && Config.storage.public_url(persisted_path)
     end
 
-    alias_method :url, :public_uri
+    alias_method :url, :public_url
 
     def assign(object)
       raise("must respond to `read`") if object && !object.respond_to?(:read)

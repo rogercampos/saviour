@@ -103,14 +103,14 @@ describe Saviour::S3Storage do
     end
   end
 
-  describe "#public_uri" do
+  describe "#public_url" do
     let(:destination_path) { "dest/file.jpeg" }
 
     it do
       with_test_file("camaloon.jpg") do |file, _|
         contents = file.read
         mocked_s3.write(contents, destination_path)
-        expect(subject.public_uri(destination_path)).to eq "https://fake-bucket.s3.amazonaws.com/dest/file.jpeg"
+        expect(subject.public_url(destination_path)).to eq "https://fake-bucket.s3.amazonaws.com/dest/file.jpeg"
       end
     end
   end

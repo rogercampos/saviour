@@ -4,7 +4,7 @@ module Saviour
   class LocalStorage
     def initialize(opts = {})
       @local_prefix = opts[:local_prefix]
-      @public_uri_prefix = opts[:public_uri_prefix]
+      @public_url_prefix = opts[:public_url_prefix]
     end
 
     def write(contents, path)
@@ -32,9 +32,9 @@ module Saviour
       ::File.file?(real_path(path))
     end
 
-    def public_uri(path)
-      raise "You must provide a `public_uri_prefix` first" unless @public_uri_prefix
-      ::File.join(@public_uri_prefix, path)
+    def public_url(path)
+      raise "You must provide a `public_url_prefix` first" unless @public_url_prefix
+      ::File.join(@public_url_prefix, path)
     end
 
 

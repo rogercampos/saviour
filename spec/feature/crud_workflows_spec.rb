@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe "saving a new file" do
-  before { Saviour::Config.storage = Saviour::LocalStorage.new(local_prefix: @tmpdir, public_uri_prefix: "http://domain.com") }
+  before { Saviour::Config.storage = Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com") }
   after { Saviour::Config.storage = nil }
 
   let(:uploader) {
@@ -75,7 +75,7 @@ describe "saving a new file" do
         a.update_attributes(file: example)
 
         expect(a.file.url).to eq "http://domain.com/store/dir/#{real_filename}"
-        expect(a.file.public_uri).to eq a.file.url
+        expect(a.file.public_url).to eq a.file.url
       end
     end
 
