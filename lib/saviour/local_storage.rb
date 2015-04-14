@@ -1,7 +1,7 @@
 require 'fileutils'
 
 module Saviour
-  class FileStorage
+  class LocalStorage
     def initialize(opts = {})
       @local_prefix = opts[:local_prefix]
       @public_uri_prefix = opts[:public_uri_prefix]

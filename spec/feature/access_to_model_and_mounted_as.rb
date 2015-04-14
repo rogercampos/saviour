@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe "access to model data from uploaders" do
-  before { Saviour::Config.storage = Saviour::FileStorage.new(local_prefix: @tmpdir, public_uri_prefix: "http://domain.com") }
+  before { Saviour::Config.storage = Saviour::LocalStorage.new(local_prefix: @tmpdir, public_uri_prefix: "http://domain.com") }
   after { Saviour::Config.storage = nil }
 
   let(:uploader) {

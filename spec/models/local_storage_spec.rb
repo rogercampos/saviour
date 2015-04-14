@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Saviour::FileStorage do
+describe Saviour::LocalStorage do
   # operate only inside @tmpdir to not mess with test setup, Dir.mktmpdir
-  subject { Saviour::FileStorage.new(local_prefix: @tmpdir) }
+  subject { Saviour::LocalStorage.new(local_prefix: @tmpdir) }
 
   describe "#write" do
     let(:filename) { "output.jpg" }
