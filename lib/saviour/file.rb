@@ -21,8 +21,8 @@ module Saviour
     end
 
 
-    def initialize(uploader_klass, model, mounted_as, version = nil)
-      @uploader_klass, @model, @mounted_as = uploader_klass, model, mounted_as
+    def initialize(uploader_klass, model, attached_as, version = nil)
+      @uploader_klass, @model, @attached_as = uploader_klass, model, attached_as
       @version = version
 
       @persisted = !!persisted_path
@@ -111,12 +111,12 @@ module Saviour
     private
 
     def uploader
-      @uploader ||= @uploader_klass.new(version: @version, data: {model: @model, mounted_as: @mounted_as})
+      @uploader ||= @uploader_klass.new(version: @version, data: {model: @model, attached_as: @attached_as})
     end
 
     def persisted_path
       if @model.persisted? || @model.destroyed?
-        column_name = ModelHooks.new(@model).column_name(@mounted_as, @version)
+        column_name = ModelHooks.new(@model).column_name(@attached_as, @version)
         @model.read_attribute(column_name)
       end
     end

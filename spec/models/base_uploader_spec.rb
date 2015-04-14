@@ -115,7 +115,7 @@ describe Saviour::BaseUploader do
   end
 
   describe "#write" do
-    subject { uploader.new(data: {model: "model", mounted_as: "mounted_as"}) }
+    subject { uploader.new(data: {model: "model", attached_as: "attached_as"}) }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) }
@@ -206,7 +206,7 @@ describe Saviour::BaseUploader do
       } }
 
       let(:model) { double(id: 8, name: "Robert") }
-      subject { uploader.new(data: {model: model, mounted_as: "mounted_as"}) }
+      subject { uploader.new(data: {model: model, attached_as: "attached_as"}) }
 
       it "can access model from processors" do
         expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/Robert_8_output.png")
@@ -254,7 +254,7 @@ describe Saviour::BaseUploader do
         } }
 
         it do
-          a = uploader.new(data: {model: "model", mounted_as: "mounted_as"})
+          a = uploader.new(data: {model: "model", attached_as: "attached_as"})
           expect { a.write('1', '2') }.to raise_error
         end
       end
@@ -346,7 +346,7 @@ describe Saviour::BaseUploader do
   end
 
   describe "#run_with_file" do
-    subject { uploader.new(data: {model: "model", mounted_as: "mounted_as"}) }
+    subject { uploader.new(data: {model: "model", attached_as: "attached_as"}) }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
