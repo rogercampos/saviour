@@ -6,7 +6,7 @@ describe "persisted path" do
 
   context "can change the default_path on the uploader and previous instances are not affected" do
     it do
-      uploader = Class.new(Saviour::BaseUploader) { store_dir! { "/store/dir" } }
+      uploader = Class.new(Saviour::BaseUploader) { store_dir { "/store/dir" } }
       klass = Class.new(Test) { include Saviour }
       klass.attach_file :file, uploader
 
@@ -17,7 +17,7 @@ describe "persisted path" do
         expect(File.dirname(a[:file])).to eq "/store/dir"
 
 
-        uploader.class_eval { store_dir! { "/another/dir" } }
+        uploader.class_eval { store_dir { "/another/dir" } }
 
         with_test_file("camaloon.jpg") do |example_2|
           b = klass.create!

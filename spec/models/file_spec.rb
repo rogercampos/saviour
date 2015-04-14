@@ -20,7 +20,7 @@ describe Saviour::File do
   before { allow(Saviour::Config).to receive(:storage).and_return(mocked_storage) }
 
   let(:uploader_klass) { Class.new(Saviour::BaseUploader) {
-    store_dir! { "/store/dir" }
+    store_dir { "/store/dir" }
   } }
 
   let(:example_file) { double(read: "some file contents", path: "/my/path") }

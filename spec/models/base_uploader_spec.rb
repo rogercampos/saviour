@@ -38,18 +38,18 @@ describe Saviour::BaseUploader do
     end
 
     it do
-      subject.store_dir! { "/my/dir" }
+      subject.store_dir { "/my/dir" }
       expect(subject.store_dirs[0].method_or_block.call).to eq "/my/dir"
     end
 
     it do
-      subject.store_dir! :method_to_return_the_dir
+      subject.store_dir :method_to_return_the_dir
       expect(subject.store_dirs[0].method_or_block).to eq :method_to_return_the_dir
     end
 
     it "can use store_dir twice and last prevails" do
-      subject.store_dir! { "/my/dir" }
-      subject.store_dir! { "/my/dir/4" }
+      subject.store_dir { "/my/dir" }
+      subject.store_dir { "/my/dir/4" }
       expect(subject.store_dirs[0].method_or_block.call).to eq "/my/dir"
       expect(subject.store_dirs[1].method_or_block.call).to eq "/my/dir/4"
     end
@@ -127,7 +127,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
       } }
 
       it "calls storage write" do
@@ -142,7 +142,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
 
         def resize(contents, filename)
           ["#{contents}-x2", filename]
@@ -160,7 +160,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
 
         def resize(contents, filename)
           ["#{contents}-x2", filename]
@@ -178,7 +178,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
 
         def resize(contents, filename, opts = {})
           ["#{contents}-#{opts[:width]}-#{opts[:height]}", filename]
@@ -195,7 +195,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
 
         def rename(contents, filename)
           [contents, "#{model.id}_#{filename}"]
@@ -221,11 +221,11 @@ describe Saviour::BaseUploader do
     describe "store_dir" do
       context "is the last one defined for the given version" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir! { "/store/dir" }
+          store_dir { "/store/dir" }
           version(:thumb) do
-            store_dir! { "/thumb/store/dir" }
+            store_dir { "/thumb/store/dir" }
           end
-          store_dir! { "/store/dir/second" }
+          store_dir { "/store/dir/second" }
         } }
 
         it do
@@ -235,9 +235,9 @@ describe Saviour::BaseUploader do
 
       context "is the last one defined without version if not specified per version" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir! { "/store/dir" }
+          store_dir { "/store/dir" }
           version(:thumb) { run(:whatever) }
-          store_dir! { "/store/dir/second" }
+          store_dir { "/store/dir/second" }
         } }
 
         it do
@@ -250,7 +250,7 @@ describe Saviour::BaseUploader do
     describe "processing behaviour on write" do
       context "fails if no store_dir defined for root version" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
-          version(:thumb) { store_dir! { "/store/dir" } }
+          version(:thumb) { store_dir { "/store/dir" } }
         } }
 
         it do
@@ -261,10 +261,10 @@ describe Saviour::BaseUploader do
 
       context "with only one version" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir! { "/store/dir" }
+          store_dir { "/store/dir" }
 
           version(:thumb) do
-            store_dir! { "/versions/store/dir" }
+            store_dir { "/versions/store/dir" }
             run { |contents, name| [contents, "2_#{name}"] }
           end
         } }
@@ -284,11 +284,11 @@ describe Saviour::BaseUploader do
 
       context "multiple definitions" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir! { "/store/dir" }
+          store_dir { "/store/dir" }
           run { |contents, name| ["#{contents}_altered", name] }
 
           version(:thumb) do
-            store_dir! { "/versions/store/dir" }
+            store_dir { "/versions/store/dir" }
             run { |contents, name| [contents, "2_#{name}"] }
           end
         } }
@@ -308,16 +308,16 @@ describe Saviour::BaseUploader do
 
       context "consecutive versions" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir! { "/store/dir" }
+          store_dir { "/store/dir" }
           run { |contents, name| ["#{contents}_altered", name] }
 
           version(:thumb) do
-            store_dir! { "/versions/store/dir" }
+            store_dir { "/versions/store/dir" }
             run { |contents, name| ["thumb_#{contents}", "2_#{name}"] }
           end
 
           version(:thumb_2) do
-            store_dir! { "/versions/store/dir" }
+            store_dir { "/versions/store/dir" }
             run { |contents, name| ["thumb_2_#{contents}", "3_#{name}"] }
           end
 
@@ -350,7 +350,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
 
         def foo(file, filename)
           ::File.write(file.path, "modified-contents")
@@ -369,7 +369,7 @@ describe Saviour::BaseUploader do
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
 
         run do |contents, filename|
           ["#{contents}_first_run", filename]

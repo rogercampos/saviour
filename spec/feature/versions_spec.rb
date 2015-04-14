@@ -6,10 +6,10 @@ describe "saving a new file" do
 
   let(:uploader) {
     Class.new(Saviour::BaseUploader) do
-      store_dir! { "/store/dir" }
+      store_dir { "/store/dir" }
 
       version(:thumb) do
-        store_dir! { "/versions/store/dir" }
+        store_dir { "/versions/store/dir" }
       end
     end
   }
@@ -65,10 +65,10 @@ describe "saving a new file" do
   describe "accessing file features directly" do
     let(:uploader) {
       Class.new(Saviour::BaseUploader) do
-        store_dir! { "/store/dir" }
+        store_dir { "/store/dir" }
 
         version(:thumb) do
-          store_dir! { "/versions/store/dir" }
+          store_dir { "/versions/store/dir" }
           run { |contents, name| ["#{contents}_for_version_thumb", name] }
         end
       end

@@ -162,7 +162,7 @@ module Saviour
 
     def write(contents, filename)
       store_dir = StoreDirExtractor.new(self).store_dir
-      raise RuntimeError, "Please use `store_dir!` before trying to write" unless store_dir
+      raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
 
       contents, filename = RunProcessors.new(self, @version_name).run!(contents, filename)
 
@@ -196,7 +196,7 @@ module Saviour
       end
 
 
-      def store_dir!(name = nil, &block)
+      def store_dir(name = nil, &block)
         element = Element.new(@current_version, name || block)
         store_dirs.push(element)
       end

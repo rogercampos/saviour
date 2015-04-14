@@ -6,7 +6,7 @@ describe "saving a new file" do
 
   let(:uploader) {
     Class.new(Saviour::BaseUploader) {
-      store_dir! { "/store/dir" }
+      store_dir { "/store/dir" }
     }
   }
 

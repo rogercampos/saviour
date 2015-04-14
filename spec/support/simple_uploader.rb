@@ -1,5 +1,5 @@
 class SimpleUploader < Saviour::BaseUploader
-  store_dir! { "/default/path" }
+  store_dir { "/default/path" }
 
   run :digest_filename
   run :resize, width: 50, height: 50
@@ -21,7 +21,7 @@ class SimpleUploader < Saviour::BaseUploader
   end
 
   version(:thumb) do
-    store_dir! { "/default/path/versions" }
+    store_dir { "/default/path/versions" }
     run :resize, with: 10, height: 10
   end
 
