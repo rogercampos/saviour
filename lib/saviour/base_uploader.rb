@@ -55,7 +55,6 @@ module Saviour
     end
 
     extend ActiveSupport::Concern
-    include Processors::Digest
     attr_reader :version_name
 
     def initialize(opts = {})

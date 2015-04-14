@@ -2,240 +2,189 @@
 
 # Saviour
 
-Saviour allows you to handle files attached to active record
-models and stored in different backends. All backends work Fog,
-any with  (local storage or s3 are the
-ones currently supported). Just like Carrierwave or Paperclip, but
-trying to solve different problems that those gems have:
+This is a very small library that only handles file uploading. It does not integrate with Rails (only ActiveRecord), it is not integrated with image manipulation (mini magick, dragonfly or other) and it is not integrated with rails views or anything else.
 
-- Just handle file storage, not image processing
+## Storages
 
-- Don't break existing uploaded file paths when you change your code.
-  Each stored file has all the data needed to connect to it stored in db
+The storage is the component responsible for talking with the real backend that you'll use to store your files.
 
-- No 'versions'. If you want versions, create a new attachment and use
-  hooks to automatically update the second file when the first changes.
+It can be any object implementing the following api:
 
-- Different APIs and different capabilities for each backend, you can't
-  operate the same way with a local file than with a remote file.
+```
+def write(contents, path)
+end
 
+def read(path)
+end
 
-## Installation
+def exists?(path)
+end
 
-Add this line to your application's Gemfile:
+def delete(path)
+end
+```
+The storage is responsible for ensuring the persistence and correct behaviour of the operations described. Saviour comes with two basic implementations for LocalStorage (storing files in the machine running your code) and S3Storage (using amazon s3 as backend), but you can write your own as well.
 
-    gem 'saviour'
+The basic convention is that a file consist of a raw content (a string, maybe binary) and a path (a string) representing its location within the backing store.
 
-And then execute:
+You must configure Saviour by providing the storage to use, using:
 
-    $ bundle
+```
+Saviour::Config.storage = MyStorageImplementation.new
+```
+The provided storage object will be used for all the lifespan of the runnig application, for all the file uploads handled by Saviour. However, if you change it at runtime it will work as expected, there's no internal caching on this.
 
-Or install it yourself as:
+### public_url
 
-    $ gem install saviour
+Storages can optionally also implement this method, in order to provide a public URL to the stored file without going through the application code.
 
-## Basic usage
+For example, if you're storing files in a machine with a webserver, you may want this method to convert from a local path to an external URL, adding the domain and protocol parts. As an ilustrative example:
 
-You can declare attachments using `attach_file` with an existing text column
-in the database.
+```
+def public_url(path)
+  "http://mydomain.com/files/#{path}"
+end
+```
+Http is the obvious example, but you can really work with any scheme, for example you can create a Storage to persist files into an FTP server and implement this to convert the internal path into something like `ftp://ftpserver.com/path/file.txt`
 
-    class Test < ActiveRecord::Base
-      attach_file :file
-    end
 
-It should be a text column in order to have enough space to store all
-the serialized data about your file: path, backend, metadata, etc.
 
-You can further configure the attachment using a DSL in a block passed
-to `attach_file`, for example:
+### LocalStorage
 
-    attach_file(:file) do |model|
-      default_path "/uploads/#{model.class.to_s}/#{model.id}"
-    end
+You can use this storage to store files in the local machine running the code. Example:
 
-All the possible configuration settings will be explained in the following
-sections. You can use the following method to declare storages to use
-later:
+```
+Saviour::Config.storage = Saviour::LocalStorage.new(
+  local_prefix: "/var/www/app_name/current/files",
+  public_url_prefix: "http://mydomain.com/uploads"
+)
+```
 
-    # config/initializers/saviour.rb
-    Saviour.configure do
-      # Set default configurations here, will be used in all the
-      # attach_file's.
-    end
+The `local_prefix` option is mandatory, and defines the base prefix under which the storage will store files in the machine. You need to configure this accordingly to your use case and deployment strategies, for example, for rails and capistrano with default settings you'll need to set it to `Rails.root.join("public/system")`.
 
-The file stored will follow the active record life cycle:
+The `public_url_prefix` is optional, and if provided you'll be able to use the `public_url` method, which will compose the provided public prefix with the given path. Same as before, you'll need to configure this accordingly to your deployment specifics.
 
-  * The file is saved on an `after_save` callback.
-  * The file is removed on an `after_destroy` callback. The directory
-    and possible parent directories will be also removed if left empty.
+As a bonus behaviour, this storage will take care of removing empty folders after removing files.
 
-All the following actions and settings that you can use are performed in
-order of definition. This means that a given action will receive the
-input data from the file modified by a previous action. For instance,
-using two consecutive `rename`'s, the second one will receive as
-`original_filename` the name returned by the first one.
 
+### S3Storage
 
-## Storages and backends
+An storage implementation using `Fog::AWS` to talk with Amazon S3. Example:
 
-Saviour currently supports two backends identified as `:s3` and
-`:local`. Those are the ways to store files that saviour knows about.
-Then storages are defined as a specific way to store files in a backend,
-providing all the required backend-specific settings. You can define
-multiple storages and use them independently in your app. The `:file`
-backend is an special case that needs no configuration at all and can
-be used directly anywhere. Example:
+```
+Saviour::Config.storage = Saviour::S3Storage.new(
+  bucket: "my-bucket-name",
+  aws_access_key_id: "stub",
+  aws_secret_access_key: "stub"
+)
+```
 
-    Saviour.configure do
-      storage(:production) do |config|
-        # fog settings + bucket
-      end
+All passed options except for `bucket` will be directly forwarded to the initialization of `Fog::Storage.new(opts)`, so please refer to Fog/AWS [source](https://github.com/fog/fog-aws/blob/master/lib/fog/aws/storage.rb) for extra options.
 
-      storage(:staging) do |config|
-        # fog settings + bucket
-      end
-    end
+The `public_url` method just delegates to the Fog implementation, which will provide the default path to the file, for example `https://fake-bucket.s3.amazonaws.com/dest/file.txt`. Custom domains can be configured directly in Fog via the `host` option, as well as `region`, etc.
 
-    class Test < ActiveRecord::Base
-      attach_file(:prod_file, on: :production) do
-        # ...
-      end
+The `exists?` method uses a head request to verify existance, so it doesn't actually download the file.
 
-      attach_file(:staging_file, on: :staging) do
-        # ...
-      end
-    end
+All files will be created as public.
 
-This is an example of a class with two attachments, each one of them using
-an storage defined earlier.
 
-You can also use `default_storage :production` in the configure block,
-and it will be used by default in all the `attach_file` calls if no
-specified otherwise with the `:on` option.
+## Uploaders
 
-All the files ever stored will remain available as long as the used
-storage is still available in the app. When saving a file, the used
-storage is persisted in the database and will used to retrieve the file.
-However you can always override the storage name persisted in database
-and try to retrieve the file with a different storage than the one used
-to store it, as long as both used the same backend.
+Uploaders are the components responsible for deciding what happens when you want to upload a file. It manages 3 things:
 
-## Saving path
+- Set the base dir under which the given file (with the given filename) will be stored.
+- Declare processings to run before upload, to modify either the contents or the filename of the file.
+- Declare versioned processings. This acts as a namespacing for the two previous responsabilities, so they only apply when the uploader is managing a versioned file.
 
-The file will be stored in the path defined with `default_path`:
+An uploader is a `Class` inheriting from `Saviour::BaseUploader`. The previous responsabilities are expressed using a minimal DSL, while you can use methods and standard ruby (including modules, etc...) to organize your processing code. See a full example here, explanation follows:
 
-    attach_file(:file) do |model|
-      default_path "uploads/#{model.class}/#{model.id}"
-    end
+```
+class ExampleUploader < Saviour::BaseUploader
+  store_dir! { "/default/path/#{model.id}" }
 
-## Rename
+  run :resize, width: 50, height: 50
 
-You can rename the final file name using `rename`:
+  run_with_file do |local_file, filename|
+    `mogrify -resize 40x40 #{local_file.path}`
+    [local_file, filename]
+  end
 
-    attach_file(:file) do |model|
-      rename { |original_name| "#{original_name[0..2]}-#{model.id}" }
+  run do |contents, filename|
+    [contents, "new-#{filename}"]
+  end
 
-      # you can also just pass a new filename if it's not dependent
-      # on the original filename
+  version(:thumb) do
+    store_dir! { "/default/path/#{model.id}/versions" }
+    run :resize, with: 10, height: 10
+  end
 
-      # rename "new_static_name"
-      # rename model.name
-    end
+  version(:just_a_copy)
 
-Note that the new filename must not include the extension part, that
-will remain the same. The `original_name` in the block form will not
-include the extension as well, but it's passed as a second argument if
-needed:
+  def resize(contents, filename, opts)
+    # User RMagick to modify contents in memory here
+    [contents, filename]
+  end
+end
+```
 
-    rename { |original_name, original_ext| "foo" }
+### Accessing model and attached_as
 
-## Change extension
+Both `store_dir` and `run` / `run_with_file` declarations can be expressed passing a block, or passing a symbol representing a method. In both cases, you can directly access there a method called `model` and a method called `attached_as`, representing the original model and the name under which the file is attached to the model.
 
-You can handle extension changes just as name changes, using `extension`:
+Use this to get info form the model to compose the store_dir, for example, or even to create a processor that extracts information from the file and passes this info back to the model.
 
-    attach_file(:file) do |model|
-      extension { |original_ext| original_ext == "jpeg" ? "jpg" : "png" }
-      # extension "png"
-      # extension model.default_extension
-    end
 
-Just to be clear, this will just change the extension of the file,
-not perform any kind of file format conversion. If you want to actually
-perform modifications on the file, use Processors.
+### store_dir
 
-## Processors
+Use `store_dir` to indicate the default directory under which the file will be stored. You can also use it under a `version` to change the default directory for that specific version.
 
-Processors can be used to modify an attached file before being saved.
-To give you some examples, you can use this to change an image format from
-png to jpeg, to resize an image to an specific size (or other
-transformations) or to compress the file using gzip before saving it.
 
-    attach_file(:file) do |model|
-      process do |file|
-        # perform operations on the file object which is a Tempfile
-        # instance
+### Processors
 
-        # finally you must return a File instance representing the file
-        # after transformations
-      end
+Processors are the methods (or blocks) that will modifiy either the file contents or the filename before actually upload the file into the storage. You can declare them via the `run` or the `run_with_file` method.
 
-      # another form is with an existing method on the model
-      process :compress
-    end
+They work as a stack, chaining the response from the previous one as input for the next one, and are executed in the same order you declare them. Each processor will receive the raw contents and the filename, and must return an array with two values, the new contents and the new filename.
 
-The block passed to `process` will be executed in the context of the
-instance.
+As described in the example before, processors can be declared in two ways:
 
-## Validations
+- As a symbol or a string, it will be interpreted as a method that will be called in the current uploader. You can optionally set an extra Hash of options that will be forwarded to the method, so it becomes easier to reuse processors.
+- As a lambda, for inline use cases.
 
-You can perform the following validations over the file to be saved:
 
-    attach_file(:file) do
-      validates_size less_than: 50.megabytes, greater_than: 1.megabyte
-      validates_format in: [:csv, :txt]
+By default processors work with the full raw contents of the file, and that's what you will get and must return when using the `run` method. However, since there are use cases for which is more convinient to have a File object instead of the raw contents, you can also use the `run_with_file` method, which will give you a Tempfile object, and from which you must return a File object as well.
 
-      validates do |file|
-        unless file.read[0..2] == "MX"
-          errors.add(:file, "does not start with MX")
-        end
-      end
+You can combine both and Saviour will take care of synchronization, however take into account that every time you switch from one to another there will be a penalty for having to either read or write from/to disk. Internally Saviour works with raw contents, so even if you only use `run_with_file`, there will be a penalty at the beginning and at the end, for writing and reading to and from a file.
 
-      # or just
-      # validates :some_validation_of_mine
-    end
+When using `run_with_file`, the last file instance you return from your last processor defined as `run_with_file` will be automatically deleted by Saviour. However, if from any of those processors you return some File instance different than the one you received pointing to a different tempfile (or file), it's your responsability to clear it.
 
-The block passed to `validates` will be executed in the context of the
-instance.
 
-An additional `message:` option can be passed to the predefined
-validations to override the default error messages, it follows the
-default rails conventions on this regard.
+### Versions
 
-## Automatic digest
+When you open a `version` block within an uploader, you can declare some processors (or change the store dir) only for that version. Note that all processors will be executed for every version that exists, plus one time for the base file. There are no optimizations done here, if your uploader declares one processors first, and from there you open 2 versions, the first processors will be executed 3 times.
 
-An automatic digest of the file contents can be added to the filename
-after beign saved, useful to expire possible caches on the stored files:
+In Saviour versions are treated just like the base file, as you can read later on in this documentation you can assign, write or manipulate a version directly, independently from the original file. So, you can see uploader version declarations just as a way to isolate some processors so that they are run only when the uploader is used to upload a version to a storage, instead of the base file.
 
-    attach_file(:file) do |model|
-      # will append a default generated digest of 16 chars length
-      digest
 
-      # or you can manually give a digest
-      digest do |file|
-        Digest::MD5.hexdigest(file.read[0..100])
-      end
-    end
+### Digest calculation
 
-## Post processing hooks
+Saviour comes with one processor that calculates the md5 checksum of the contents and append the result into the filename. You can use it in order to automatically expire possible caches present in CDNs or intermediate http proxy caches. Use it like this:
 
-## Using versions
+```
+class ExampleUploader < Saviour::BaseUploader
+  include Saviour::Processors:Digest
 
-## Metadata
+  run :digest_filename, separator: "-"
+end
+```
+The previous example will change a filename like `file.jpeg` to `file-17a9172b91198028.jpeg`. You can optionally set the separator character, by default is `-`.
 
-## Contributing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+## ActiveRecord
+
+### Sources
+
+UrlSource and StringSource, and anything else.
+
+### Validations
+### Declaring versions
+###
