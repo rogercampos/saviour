@@ -24,8 +24,8 @@ module Saviour
 
     def delete!
       attached_files.each do |column, versions|
-        @model.send(column).delete
-        versions.each { |version| @model.send(column, version).delete }
+        @model.send(column).delete if @model.send(column).exists?
+        versions.each { |version| @model.send(column, version).delete if @model.send(column, version).exists? }
       end
     end
 
@@ -35,13 +35,13 @@ module Saviour
           name = column_name(column, nil)
           previous_content = @model.send(column).send(:consumed_source)
 
-          Config.storage.delete(@model[name]) if @model[name]
+          Config.storage.delete(@model[name]) if @model[name] && @model.send(column).exists?
           upload_file(column, nil)
 
           versions.each do |version|
             name = column_name(column, version)
 
-            Config.storage.delete(@model[name]) if @model[name]
+            Config.storage.delete(@model[name]) if @model[name] && @model.send(column, version).exists?
             @model.send(column, version).assign(StringSource.new(previous_content, version_filename(column, version)))
             upload_file(column, version)
           end

@@ -2,6 +2,7 @@ module Saviour
   class S3Storage
     def initialize(conf = {})
       @bucket = conf.delete(:bucket)
+      @prefix_public_url = conf.delete(:prefix_public_url)
       @conf = conf
       assert_directory_exists!
     end
@@ -34,8 +35,7 @@ module Saviour
 
     def public_url(path)
       path = sanitize_leading_slash(path)
-      assert_exists(path)
-      directory.files.get(path).public_url
+      ::File.join(@prefix_public_url, path)
     end
 
 
