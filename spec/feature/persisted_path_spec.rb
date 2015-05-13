@@ -22,9 +22,11 @@ describe "persisted path" do
         with_test_file("camaloon.jpg") do |example_2|
           b = klass.create!
           expect(b.update_attributes(file: example_2)).to be_truthy
-          expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
-          expect(File.dirname(b[:file])).to eq "/another/dir"
 
+          expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
+          expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
+
+          expect(File.dirname(b[:file])).to eq "/another/dir"
           expect(File.dirname(a[:file])).to eq "/store/dir"
         end
       end
