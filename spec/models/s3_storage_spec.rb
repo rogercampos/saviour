@@ -1,8 +1,9 @@
 require 'spec_helper'
 
 describe Saviour::S3Storage do
-  subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub") }
-  let!(:mocked_s3) { MockedS3Helper.new("fake-bucket") }
+  subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: "https://fake-bucket.s3.amazonaws.com") }
+  let!(:mocked_s3) { MockedS3Helper.new }
+  before { mocked_s3.start!(bucket_name: "fake-bucket") }
 
   context do
     it "fails when no keys are provided" do
@@ -105,6 +106,18 @@ describe Saviour::S3Storage do
 
   describe "#public_url" do
     let(:destination_path) { "dest/file.jpeg" }
+
+    context do
+      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub") }
+
+      it "fails if not provided the prefix" do
+        with_test_file("camaloon.jpg") do |file, _|
+          contents = file.read
+          mocked_s3.write(contents, destination_path)
+          expect { subject.public_url(destination_path) }.to raise_error
+        end
+      end
+    end
 
     it do
       with_test_file("camaloon.jpg") do |file, _|
