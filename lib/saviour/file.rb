@@ -50,7 +50,7 @@ module Saviour
     def assign(object)
       raise("must respond to `read`") if object && !object.respond_to?(:read)
 
-      @consumed_source = nil
+      @source_data = nil
       @source = object
       @persisted = !object
 
@@ -87,22 +87,21 @@ module Saviour
       end
     end
 
+    def filename_to_be_assigned
+      changed? && (SourceFilenameExtractor.new(@source).detected_filename || SecureRandom.hex)
+    end
 
     def write
       raise "You must provide a source to read from first" unless @source
 
-      name = SourceFilenameExtractor.new(@source).detected_filename || SecureRandom.hex
-      path = uploader.write(consumed_source, name)
+      path = uploader.write(source_data, filename_to_be_assigned)
       @source_was = @source
       @persisted = true
       path
     end
 
-
-    protected
-
-    def consumed_source
-      @consumed_source ||= begin
+    def source_data
+      @source_data ||= begin
         @source.read
       end
     end
@@ -116,7 +115,7 @@ module Saviour
 
     def persisted_path
       if @model.persisted? || @model.destroyed?
-        column_name = ModelHooks.new(@model).column_name(@attached_as, @version)
+        column_name = ColumnNamer.new(@attached_as, @version).name
         @model.read_attribute(column_name)
       end
     end

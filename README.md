@@ -188,3 +188,21 @@ UrlSource and StringSource, and anything else.
 ### Validations
 ### Declaring versions
 ###
+
+
+
+TODO:
+
+- How the user can assign directly a content into a file or into a specific file's version, without applying uploaders.
+
+Use `Saviour::Config.storage.write("binary contents", path)`. The path is the persisted string in the database column.
+This way you're using directly the storage abstraction (a small wrapper around the real persistence layer, disk, s3 or whatever) to
+upload your binary contents to the specified path. This will be a direct communication with the storage, no uploader code involved or
+active record callbacks involved at all.
+
+The path can be `model.read_attribute(attached_as)` or for a version `model.read_attribute("#{attached_as}_thumb")`.
+
+If there's nothing yet and the database columns are empty, just provide the path yourself, same code you would put in the call
+to `store_dir { }` in the uploader.
+
+- How to recreate versions, in case you change your uploader's code and want to reprocess existing data.

@@ -57,7 +57,7 @@ end
 class MockedS3Helper
   attr_reader :directory
 
-  def initialize(bucket_name)
+  def start!(bucket_name: nil)
     @directory = connection.directories.create(key: bucket_name)
   end
 
