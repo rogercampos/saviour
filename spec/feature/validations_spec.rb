@@ -18,7 +18,7 @@ describe "validations saving a new file" do
 
   it "fails at block validation" do
     klass = Class.new(base_klass) do
-      attach_validation(:file) do |contents|
+      attach_validation(:file) do |contents, _|
         errors.add(:file, "Cannot start with X") if contents[0] == 'X'
       end
     end
@@ -44,7 +44,7 @@ describe "validations saving a new file" do
     klass = Class.new(base_klass) do
       attach_validation :file, :check_filesize
 
-      def check_filesize(contents)
+      def check_filesize(contents, _)
         errors.add(:file, "Filesize must be less than 10 bytes") if contents.bytesize >= 10
       end
     end
@@ -68,11 +68,11 @@ describe "validations saving a new file" do
   it "combined validatinos" do
     klass = Class.new(base_klass) do
       attach_validation :file, :check_filesize
-      attach_validation(:file) do |contents|
+      attach_validation(:file) do |contents, _|
         errors.add(:file, "Cannot start with X") if contents[0] == 'X'
       end
 
-      def check_filesize(contents)
+      def check_filesize(contents, _)
         errors.add(:file, "Filesize must be less than 10 bytes") if contents.bytesize >= 10
       end
     end
@@ -101,6 +101,31 @@ describe "validations saving a new file" do
       expect(a).not_to be_valid
       expect(a.errors[:file][0]).to eq "Filesize must be less than 10 bytes"
       expect(a.errors[:file][1]).to eq "Cannot start with X"
+    end
+  end
+
+  it "validates by filename" do
+    klass = Class.new(base_klass) do
+      attach_validation :file, :check_filename
+
+      def check_filename(_, filename)
+        errors.add(:file, "Only .jpg files") unless filename =~ /\.jpg/
+      end
+    end
+
+    with_test_file("example.xml") do |example|
+      allow(example).to receive(:read).and_return("X-Ex")
+      a = klass.new
+      a.file = example
+      expect(a).not_to be_valid
+      expect(a.errors[:file][0]).to eq "Only .jpg files"
+    end
+
+    with_test_file("camaloon.jpg") do |example|
+      allow(example).to receive(:read).and_return("X-Ex")
+      a = klass.new
+      a.file = example
+      expect(a).to be_valid
     end
   end
 end

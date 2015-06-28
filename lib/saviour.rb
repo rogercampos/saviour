@@ -82,11 +82,12 @@ module Saviour
 
     def run_validation(column, method_or_block)
       data = @model.send(column).source_data
+      filename = @model.send(column).filename_to_be_assigned
 
       if method_or_block.respond_to?(:call)
-        @model.instance_exec(data, &method_or_block)
+        @model.instance_exec(data, filename, &method_or_block)
       else
-        @model.send(method_or_block, data)
+        @model.send(method_or_block, data, filename)
       end
     end
 
