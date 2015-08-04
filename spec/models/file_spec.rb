@@ -184,4 +184,27 @@ describe Saviour::File do
       end
     end
   end
+
+  describe "#blank?" do
+    it "it's true when not yet assigned nor persisted" do
+      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      expect(file).to be_blank
+    end
+
+    it "it's true when not yet assigned but persisted" do
+      file = Saviour::File.new(uploader_klass, Test.create!, :file)
+      expect(file).to be_blank
+    end
+
+    it "it's false when not persisted but assigned" do
+      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file.assign example_file
+      expect(file).not_to be_blank
+    end
+
+    it "it's false when persisted and assigned" do
+      file = Saviour::File.new(uploader_klass, Test.create!(file: example_file), :file)
+      expect(file).not_to be_blank
+    end
+  end
 end

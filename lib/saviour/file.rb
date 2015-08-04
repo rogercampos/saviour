@@ -106,6 +106,10 @@ module Saviour
       end
     end
 
+    def blank?
+      !@source && !persisted?
+    end
+
 
     private
 
