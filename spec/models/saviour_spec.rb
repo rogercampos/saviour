@@ -28,4 +28,16 @@ describe Saviour do
       end
     }.to raise_error
   end
+
+  it "does not raise error if table is not present" do
+    allow(Test).to receive(:table_exists?).and_return(false)
+
+    expect {
+      Class.new(Test) do
+        include Saviour
+
+        attach_file :not_present, Saviour::BaseUploader
+      end
+    }.to_not raise_error
+  end
 end

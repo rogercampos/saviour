@@ -120,7 +120,7 @@ module Saviour
       ([nil] + versions).each do |version|
         column_name = ColumnNamer.new(attach_as, version).name
 
-        unless self.column_names.include?(column_name.to_s)
+        if self.table_exists? && !self.column_names.include?(column_name.to_s)
           raise RuntimeError, "#{self} must have a database string column named '#{column_name}'"
         end
       end
