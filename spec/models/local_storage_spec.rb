@@ -92,4 +92,42 @@ describe Saviour::LocalStorage do
       expect(subject.exists?("unexisting_file.zip")).to be_falsey
     end
   end
+
+  describe "#public_url" do
+    let(:destination_path) { "dest/file.jpeg" }
+
+    context do
+      subject { Saviour::LocalStorage.new(local_prefix: @tmpdir) }
+
+      it "fails if not provided the prefix" do
+        with_test_file("camaloon.jpg") do |file, _|
+          expect {
+            subject.public_url(File.basename(file.path))
+          }.to raise_error
+        end
+      end
+    end
+
+    context do
+      subject { Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: -> { "http://mywebsite.com/#{Time.now.hour}/uploads" }) }
+
+      it do
+        allow(Time).to receive(:now).and_return(Time.new(2015, 1, 1, 13, 2, 1))
+
+        with_test_file("camaloon.jpg") do |file, filename|
+          expect(subject.public_url(File.basename(file.path))).to eq "http://mywebsite.com/13/uploads/#{filename}"
+        end
+      end
+    end
+
+    context do
+      subject { Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://mywebsite.com/uploads") }
+
+      it do
+        with_test_file("camaloon.jpg") do |file, filename|
+          expect(subject.public_url(File.basename(file.path))).to eq "http://mywebsite.com/uploads/#{filename}"
+        end
+      end
+    end
+  end
 end

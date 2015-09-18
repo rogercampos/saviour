@@ -119,6 +119,20 @@ describe Saviour::S3Storage do
       end
     end
 
+    context do
+      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: -> { "https://#{Time.now.hour}.s3.amazonaws.com" }) }
+
+      it "allow to use a lambda for dynamic url prefixes" do
+        allow(Time).to receive(:now).and_return(Time.new(2015, 1, 1, 13, 2, 1))
+
+        with_test_file("camaloon.jpg") do |file, _|
+          contents = file.read
+          mocked_s3.write(contents, destination_path)
+          expect(subject.public_url(destination_path)).to eq "https://13.s3.amazonaws.com/dest/file.jpeg"
+        end
+      end
+    end
+
     it do
       with_test_file("camaloon.jpg") do |file, _|
         contents = file.read

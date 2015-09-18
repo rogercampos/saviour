@@ -33,12 +33,20 @@ module Saviour
     end
 
     def public_url(path)
-      raise "You must provide a `public_url_prefix` first" unless @public_url_prefix
-      ::File.join(@public_url_prefix, path)
+      raise "You must provide a `public_url_prefix`" unless public_url_prefix
+      ::File.join(public_url_prefix, path)
     end
 
 
     private
+
+    def public_url_prefix
+      if @public_url_prefix.respond_to?(:call)
+        @public_url_prefix.call
+      else
+        @public_url_prefix
+      end
+    end
 
     def real_path(path)
       @local_prefix ? ::File.join(@local_prefix, path) : path
