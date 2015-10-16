@@ -88,7 +88,7 @@ module Saviour
       end
 
       def file
-        @file ||= Tempfile.new(SecureRandom.hex).tap { |x| x.binmode }
+        @file ||= Tempfile.new([SecureRandom.hex, ::File.extname(filename)]).tap { |x| x.binmode }
       end
 
       def run_element(element, opts, data)
@@ -136,13 +136,14 @@ module Saviour
         end
       end
 
-      def run!(content_data, name)
+      def run!(content_data, initial_filename)
         self.contents = content_data
-        self.filename = name
+        self.filename = initial_filename
         previous_type = :memory
 
         matching_processors.each do |processor|
           advance!(processor, previous_type)
+
           run_processor(processor)
           previous_type = processor[:type]
         end

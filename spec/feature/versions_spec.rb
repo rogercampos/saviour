@@ -20,7 +20,7 @@ describe "saving a new file" do
     a
   }
 
-  describe "creation after main file" do
+  describe "creation following main file" do
     it do
       with_test_file("example.xml") do |example|
         a = klass.create!
@@ -111,6 +111,26 @@ describe "saving a new file" do
         a = klass.create!
         expect(a.update_attributes(file: example)).to be_truthy
         expect(a.file(:thumb).exists?).to be_truthy
+      end
+    end
+  end
+
+  describe "assign specific version after first creation" do
+    it do
+      with_test_file("example.xml") do |example|
+        a = klass.create!
+        expect(a.update_attributes(file: example)).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+        expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(example, ".*")}_thumb.xml"
+
+        with_test_file("camaloon.jpg") do |ex2, filename|
+          a.file(:thumb).assign(ex2)
+
+          expect(a.save!).to be_truthy
+
+          expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+          expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(filename, ".*")}.jpg"
+        end
       end
     end
   end

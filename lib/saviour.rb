@@ -26,7 +26,7 @@ module Saviour
       if @version
         "#{@attached_as}_#{@version}"
       else
-        @attached_as
+        @attached_as.to_s
       end
     end
   end
@@ -53,6 +53,14 @@ module Saviour
             name = ColumnNamer.new(column, version).name
             Config.storage.delete(@model.read_attribute(name)) if @model.read_attribute(name)
             upload_file(column, version)
+          end
+        else
+          versions.each do |version|
+            if @model.send(column, version).changed?
+              name = ColumnNamer.new(column, version).name
+              Config.storage.delete(@model.read_attribute(name)) if @model.read_attribute(name)
+              upload_file(column, version)
+            end
           end
         end
       end

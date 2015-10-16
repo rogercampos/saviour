@@ -88,7 +88,7 @@ module Saviour
     end
 
     def filename_to_be_assigned
-      changed? && (SourceFilenameExtractor.new(@source).detected_filename || SecureRandom.hex)
+      changed? ? (SourceFilenameExtractor.new(@source).detected_filename || SecureRandom.hex) : nil
     end
 
     def write
