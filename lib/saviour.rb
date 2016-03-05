@@ -117,6 +117,13 @@ module Saviour
     validate { ModelHooks.new(self).validate! }
   end
 
+  def reload
+    self.class.__saviour_attached_files.each do |attach_as, versions|
+      (versions + [nil]).each { |version| instance_variable_set("@__uploader_#{version}_#{attach_as}", nil) }
+    end
+    super
+  end
+
   module ClassMethods
     def attach_file(attach_as, uploader_klass, opts = {})
       self.__saviour_attached_files ||= {}
