@@ -33,14 +33,40 @@ describe Saviour::S3Storage do
       end
     end
 
-    it "overwritting an existing file" do
-      mocked_s3.write("some dummy contents", destination_path)
-      expect(mocked_s3.exists?(destination_path)).to be_truthy
+    describe "overwritting" do
+      context "without overwrite protection" do
+        subject {
+          Saviour::S3Storage.new(
+              bucket: "fake-bucket",
+              aws_access_key_id: "stub",
+              aws_secret_access_key: "stub",
+              public_url_prefix: "https://fake-bucket.s3.amazonaws.com",
+              overwrite_protection: false
+          )
+        }
 
-      with_test_file("camaloon.jpg") do |file, _|
-        contents = file.read
-        subject.write(contents, destination_path)
-        expect(mocked_s3.read(destination_path)).to eq contents
+        it "overwrites the existing file" do
+          mocked_s3.write("some dummy contents", destination_path)
+          expect(mocked_s3.exists?(destination_path)).to be_truthy
+
+          with_test_file("camaloon.jpg") do |file, _|
+            contents = file.read
+            subject.write(contents, destination_path)
+            expect(mocked_s3.read(destination_path)).to eq contents
+          end
+        end
+      end
+
+      context "with overwrite protection" do
+        it "raises an exception" do
+          mocked_s3.write("some dummy contents", destination_path)
+          expect(mocked_s3.exists?(destination_path)).to be_truthy
+
+          with_test_file("camaloon.jpg") do |file, _|
+            contents = file.read
+            expect { subject.write(contents, destination_path) }.to raise_error(RuntimeError)
+          end
+        end
       end
     end
 

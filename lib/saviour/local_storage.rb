@@ -5,9 +5,12 @@ module Saviour
     def initialize(opts = {})
       @local_prefix = opts[:local_prefix]
       @public_url_prefix = opts[:public_url_prefix]
+      @overwrite_protection = opts.fetch(:overwrite_protection, true)
     end
 
     def write(contents, path)
+      raise(RuntimeError, "The path you're trying to write already exists!") if exists?(path) && @overwrite_protection
+
       dir = ::File.dirname(real_path(path))
       FileUtils.mkdir_p(dir) unless ::File.directory?(dir)
 

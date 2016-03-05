@@ -4,10 +4,13 @@ module Saviour
       @bucket = conf.delete(:bucket)
       @public_url_prefix = conf.delete(:public_url_prefix)
       @conf = conf
+      @overwrite_protection = conf.delete(:overwrite_protection) { true }
       assert_directory_exists!
     end
 
     def write(contents, path)
+      raise(RuntimeError, "The path you're trying to write already exists!") if exists?(path) && @overwrite_protection
+
       path = sanitize_leading_slash(path)
       directory.files.create(
           key: path,

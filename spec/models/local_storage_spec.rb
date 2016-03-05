@@ -21,19 +21,40 @@ describe Saviour::LocalStorage do
       end
     end
 
-    it "overwritting an existing file" do
-      file_destination = File.join(@tmpdir, destination_path)
+    describe "overwritting an existing file" do
+      context "with overwrite protection" do
+        it "raises an error" do
+          path = File.join(@tmpdir, destination_path)
 
-      FileUtils.mkdir_p(File.dirname(file_destination))
-      File.write(file_destination, "some dummy content")
-      expect(File.file?(file_destination)).to be_truthy
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, "some dummy content")
+          expect(File.file?(path)).to be_truthy
 
-      with_test_file("camaloon.jpg") do |file, _|
-        contents = file.read
-        subject.write(contents, destination_path)
+          with_test_file("camaloon.jpg") do |file, _|
+            contents = file.read
+            expect { subject.write(contents, destination_path) }.to raise_error(RuntimeError)
+          end
+        end
+      end
 
-        expect(File.file?(file_destination)).to be_truthy
-        expect(File.read(file_destination)).to eq contents
+      context "without overwrite protection" do
+        subject { Saviour::LocalStorage.new(local_prefix: @tmpdir, overwrite_protection: false) }
+
+        it do
+          path = File.join(@tmpdir, destination_path)
+
+          FileUtils.mkdir_p(File.dirname(path))
+          File.write(path, "some dummy content")
+          expect(File.file?(path)).to be_truthy
+
+          with_test_file("camaloon.jpg") do |file, _|
+            contents = file.read
+            subject.write(contents, destination_path)
+
+            expect(File.file?(path)).to be_truthy
+            expect(File.read(path)).to eq contents
+          end
+        end
       end
     end
   end
