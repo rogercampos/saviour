@@ -44,14 +44,19 @@ module Saviour
 
     def save!
       attached_files.each do |column, versions|
-        if @model.send(column).changed?
-          original_content = @model.send(column).source_data
-          versions.each { |version| @model.send(column, version).assign(StringSource.new(original_content, default_version_filename(column, version))) }
+        base_file_changed = @model.send(column).changed?
+        original_content = @model.send(column).source_data if base_file_changed
 
-          ([nil] + versions).each { |version| upload_file(column, version) }
-        else
-          versions.each { |version| upload_file(column, version) if @model.send(column, version).changed? }
+        versions.each do |version|
+          if @model.send(column, version).changed?
+            upload_file(column, version)
+          elsif base_file_changed
+            @model.send(column, version).assign(StringSource.new(original_content, default_version_filename(column, version)))
+            upload_file(column, version)
+          end
         end
+
+        upload_file(column, nil) if base_file_changed
       end
     end
 

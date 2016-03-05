@@ -166,4 +166,21 @@ describe "saving a new file" do
       end
     end
   end
+
+  describe "respects version assignation vs main file assignation on conflict" do
+    it do
+      a = klass.create!
+
+      with_test_file("example.xml") do |file1, fname1|
+        with_test_file("camaloon.jpg") do |file2, fname2|
+          a.file.assign(file1)
+          a.file(:thumb).assign(file2)
+          a.save!
+
+          expect(a[:file]).to eq "/store/dir/#{fname1}"
+          expect(a[:file_thumb]).to eq "/versions/store/dir/#{fname2}"
+        end
+      end
+    end
+  end
 end
