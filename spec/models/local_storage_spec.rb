@@ -46,7 +46,7 @@ describe Saviour::LocalStorage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.read("nope.rar") }.to raise_error
+      expect { subject.read("nope.rar") }.to raise_error(RuntimeError)
     end
   end
 
@@ -61,7 +61,7 @@ describe Saviour::LocalStorage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.delete("nope.rar") }.to raise_error
+      expect { subject.delete("nope.rar") }.to raise_error(RuntimeError)
     end
 
     it "does not leave an empty dir behind" do
@@ -103,7 +103,7 @@ describe Saviour::LocalStorage do
         with_test_file("camaloon.jpg") do |file, _|
           expect {
             subject.public_url(File.basename(file.path))
-          }.to raise_error
+          }.to raise_error(RuntimeError)
         end
       end
     end

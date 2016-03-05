@@ -34,7 +34,7 @@ module Saviour
     end
 
     def public_url(path)
-      raise "You must provide a `public_url_prefix`" unless public_url_prefix
+      raise(RuntimeError, "You must provide a `public_url_prefix`") unless public_url_prefix
 
       path = sanitize_leading_slash(path)
       ::File.join(public_url_prefix, path)
@@ -56,11 +56,11 @@ module Saviour
     end
 
     def assert_directory_exists!
-      directory || raise("The bucket #{@bucket} doesn't exists or misconfigured connection.")
+      directory || raise(ArgumentError, "The bucket #{@bucket} doesn't exists or misconfigured connection.")
     end
 
     def assert_exists(path)
-      raise "File does not exists: #{path}" unless exists?(path)
+      raise RuntimeError, "File does not exists: #{path}" unless exists?(path)
     end
 
     def directory

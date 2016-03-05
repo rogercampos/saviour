@@ -9,13 +9,13 @@ describe Saviour::S3Storage do
     it "fails when no keys are provided" do
       expect {
         Saviour::S3Storage.new(bucket: "fake-bucket")
-      }.to raise_error
+      }.to raise_error(ArgumentError)
     end
 
     it "fails when the bucket doesn't exists" do
       expect {
         Saviour::S3Storage.new(bucket: "no-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub")
-      }.to raise_error
+      }.to raise_error(ArgumentError)
     end
   end
 
@@ -65,7 +65,7 @@ describe Saviour::S3Storage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.read("nope.rar") }.to raise_error
+      expect { subject.read("nope.rar") }.to raise_error(RuntimeError)
     end
   end
 
@@ -84,7 +84,7 @@ describe Saviour::S3Storage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.delete("nope.rar") }.to raise_error
+      expect { subject.delete("nope.rar") }.to raise_error(RuntimeError)
     end
   end
 
@@ -114,7 +114,7 @@ describe Saviour::S3Storage do
         with_test_file("camaloon.jpg") do |file, _|
           contents = file.read
           mocked_s3.write(contents, destination_path)
-          expect { subject.public_url(destination_path) }.to raise_error
+          expect { subject.public_url(destination_path) }.to raise_error(RuntimeError)
         end
       end
     end

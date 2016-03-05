@@ -17,3 +17,4 @@ test/version_tmp
 tmp
 spec/support/test_data_dir/*
 .idea
+.rbenv-gemsets

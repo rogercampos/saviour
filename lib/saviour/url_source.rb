@@ -47,7 +47,7 @@ module Saviour
     end
 
     def with_retry(n = 3, &block)
-      raise("Connection to #{@uri} failed after 3 attempts.") if n == 0
+      raise(RuntimeError, "Connection to #{@uri} failed after 3 attempts.") if n == 0
 
       block.call || with_retry(n - 1, &block)
     end

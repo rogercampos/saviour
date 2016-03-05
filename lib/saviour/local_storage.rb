@@ -33,7 +33,7 @@ module Saviour
     end
 
     def public_url(path)
-      raise "You must provide a `public_url_prefix`" unless public_url_prefix
+      raise(RuntimeError, "You must provide a `public_url_prefix`") unless public_url_prefix
       ::File.join(public_url_prefix, path)
     end
 
@@ -53,7 +53,7 @@ module Saviour
     end
 
     def assert_exists(path)
-      raise "File does not exists: #{path}" unless ::File.file?(real_path(path))
+      raise(RuntimeError, "File does not exists: #{path}") unless ::File.file?(real_path(path))
     end
 
     def ensure_removed_empty_dir(path)

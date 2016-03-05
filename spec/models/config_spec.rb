@@ -5,7 +5,7 @@ describe Saviour::Config do
   
   describe "#storage" do
     it do
-      expect { Saviour::Config.storage }.to raise_error
+      expect { Saviour::Config.storage }.to raise_error(RuntimeError)
     end
 
     it do

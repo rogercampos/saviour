@@ -48,7 +48,7 @@ module Saviour
     alias_method :url, :public_url
 
     def assign(object)
-      raise("must respond to `read`") if object && !object.respond_to?(:read)
+      raise(RuntimeError, "must respond to `read`") if object && !object.respond_to?(:read)
 
       @source_data = nil
       @source = object
@@ -92,7 +92,7 @@ module Saviour
     end
 
     def write
-      raise "You must provide a source to read from first" unless @source
+      raise(RuntimeError, "You must provide a source to read from first") unless @source
 
       path = uploader.write(source_data, filename_to_be_assigned)
       @source_was = @source

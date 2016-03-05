@@ -16,7 +16,7 @@ describe Saviour do
 
         attach_file :not_present, Saviour::BaseUploader
       end
-    }.to raise_error
+    }.to raise_error(RuntimeError)
   end
 
   it "error if column not present on version" do
@@ -26,7 +26,7 @@ describe Saviour do
 
         attach_file :file, Saviour::BaseUploader, versions: [:not_present]
       end
-    }.to raise_error
+    }.to raise_error(RuntimeError)
   end
 
   it "does not raise error if table is not present" do
