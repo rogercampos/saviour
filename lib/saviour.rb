@@ -38,8 +38,7 @@ module Saviour
 
     def delete!
       attached_files.each do |column, versions|
-        @model.send(column).delete if @model.send(column).exists?
-        versions.each { |version| @model.send(column, version).delete if @model.send(column, version).exists? }
+        (versions + [nil]).each { |version| @model.send(column, version).delete if @model.send(column, version).exists? }
       end
     end
 
@@ -75,8 +74,8 @@ module Saviour
     end
 
     def default_version_filename(column, version)
-      saviour_file = @model.send(column)
-      "#{::File.basename(saviour_file.filename_to_be_assigned, ".*")}_#{version}#{::File.extname(saviour_file.filename_to_be_assigned)}"
+      filename = @model.send(column).filename_to_be_assigned
+      "#{::File.basename(filename, ".*")}_#{version}#{::File.extname(filename)}"
     end
 
     def upload_file(column, version)

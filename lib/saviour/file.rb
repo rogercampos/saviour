@@ -101,9 +101,7 @@ module Saviour
     end
 
     def source_data
-      @source_data ||= begin
-        @source.read
-      end
+      @source_data ||= @source.read
     end
 
     def blank?
@@ -119,8 +117,7 @@ module Saviour
 
     def persisted_path
       if @model.persisted? || @model.destroyed?
-        column_name = ColumnNamer.new(@attached_as, @version).name
-        @model.read_attribute(column_name)
+        @model.read_attribute(ColumnNamer.new(@attached_as, @version).name)
       end
     end
   end
