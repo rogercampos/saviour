@@ -144,4 +144,29 @@ describe "validations saving a new file" do
       expect(a.errors[:file][0]).to eq "Received error in file"
     end
   end
+
+  context "versions are validated" do
+    let(:uploader) {
+      Class.new(Saviour::BaseUploader) {
+        store_dir { "/store/dir" }
+        version(:thumb)
+      }
+    }
+    let(:klass) {
+      Class.new(base_klass) do
+        attach_validation(:file) do |contents, _, opts|
+          errors.add(:file, "Cannot start with X in version #{opts[:version]}") if contents[0] == 'X'
+        end
+      end
+    }
+
+    it do
+      a = klass.create!
+      a.file.assign Saviour::StringSource.new("correct contents")
+      a.file(:thumb).assign Saviour::StringSource.new("X Incorrect contents")
+
+      expect(a).not_to be_valid
+      expect(a.errors[:file][0]).to eq "Cannot start with X in version thumb"
+    end
+  end
 end

@@ -62,8 +62,10 @@ module Saviour
 
     def validate!
       validations.each do |column, method_or_blocks|
-        if @model.send(column).changed?
-          method_or_blocks.each { |method_or_block| run_validation(column, method_or_block) }
+        (attached_files[column] + [nil]).each do |version|
+          if @model.send(column, version).changed?
+            method_or_blocks.each { |method_or_block| run_validation(column, version, method_or_block) }
+          end
         end
       end
     end
@@ -84,10 +86,10 @@ module Saviour
       @model.class.__saviour_attached_files || {}
     end
 
-    def run_validation(column, method_or_block)
-      data = @model.send(column).source_data
-      filename = @model.send(column).filename_to_be_assigned
-      opts = {attached_as: column}
+    def run_validation(column, version, method_or_block)
+      data = @model.send(column, version).source_data
+      filename = @model.send(column, version).filename_to_be_assigned
+      opts = {attached_as: column, version: version}
 
       if method_or_block.respond_to?(:call)
         if method_or_block.arity == 2
