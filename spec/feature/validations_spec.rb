@@ -128,4 +128,20 @@ describe "validations saving a new file" do
       expect(a).to be_valid
     end
   end
+
+  it "receives the attached_as information" do
+    klass = Class.new(base_klass) do
+      attach_validation :file, :check_filename
+
+      def check_filename(_, _, opts)
+        errors.add(:file, "Received error in #{opts[:attached_as]}")
+      end
+    end
+
+    with_test_file("example.xml") do |example|
+      a = klass.new file: example
+      expect(a).not_to be_valid
+      expect(a.errors[:file][0]).to eq "Received error in file"
+    end
+  end
 end

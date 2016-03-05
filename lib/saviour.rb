@@ -87,11 +87,20 @@ module Saviour
     def run_validation(column, method_or_block)
       data = @model.send(column).source_data
       filename = @model.send(column).filename_to_be_assigned
+      opts = {attached_as: column}
 
       if method_or_block.respond_to?(:call)
-        @model.instance_exec(data, filename, &method_or_block)
+        if method_or_block.arity == 2
+          @model.instance_exec(data, filename, &method_or_block)
+        else
+          @model.instance_exec(data, filename, opts, &method_or_block)
+        end
       else
-        @model.send(method_or_block, data, filename)
+        if @model.method(method_or_block).arity == 2
+          @model.send(method_or_block, data, filename)
+        else
+          @model.send(method_or_block, data, filename, opts)
+        end
       end
     end
 
