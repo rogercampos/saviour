@@ -164,7 +164,7 @@ module Saviour
       store_dir = StoreDirExtractor.new(self).store_dir
       raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
 
-      contents, filename = RunProcessors.new(self, @version_name).run!(contents, filename)
+      contents, filename = RunProcessors.new(self, @version_name).run!(contents, filename) if Config.processing_enabled
 
       path = ::File.join(store_dir, filename)
       Config.storage.write(contents, path)

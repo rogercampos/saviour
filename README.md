@@ -181,15 +181,38 @@ end
 The previous example will change a filename like `file.jpeg` to `file-17a9172b91198028.jpeg`. You can optionally set the separator character, by default is `-`.
 
 
+###
+
 ## ActiveRecord
+
+
+### Lifecycle
+
+- validation: The declared validations are executed using a `validate` block.
+
 
 ### Sources
 
 UrlSource and StringSource, and anything else.
 
+
 ### Validations
+
+Take note that validations are executed over the contents given as they are, before any processing. For example you can
+have a validation declaring "max file size is 1Mb", assign a file right below the limit, but then process it in a way that
+increases its size. You'll be left with a file bigger than 1Mb.
+
 ### Declaring versions
-###
+
+### Getting metadata from the file
+
+A typical use case is wanting to analyze the file in some way and persist in the database the results. A common example
+is getting the filesize and store it apart so you can quickly know the amount of space used by your files, for example.
+Saviour does not implement any of those features, but it's easy to do by using processors in the uploaders.
+You'll have to decide how to treat versions: Analyze only the main file? Analyze all the versions and store the results for
+each version, or maybe "merge" the results and store only one value?
+Another thing to consider is that if you save the results in the database you'll be issuing 2 update queries, since
+Saviour runs processors and "persistance" on `after_save` in order to provide with the instance ID.
 
 
 

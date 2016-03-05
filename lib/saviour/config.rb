@@ -1,13 +1,13 @@
 module Saviour
-  class Config
-    class << self
-      def storage
-        @storage || raise(RuntimeError, "You need to provide a storage! Set Saviour::Config.storage = xxx")
-      end
+  module Config
+    extend self
 
-      def storage=(value)
-        @storage = value
-      end
+    attr_writer :storage
+    def storage
+      @storage || raise(RuntimeError, "You need to provide a storage! Set Saviour::Config.storage = xxx")
     end
+
+    attr_accessor :processing_enabled
+    @processing_enabled = true
   end
 end
