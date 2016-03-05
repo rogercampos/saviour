@@ -52,4 +52,29 @@ describe Saviour do
       end
     }.to_not raise_error
   end
+
+  describe ".attached_files" do
+    it "includes a mapping of the currently attached files and their versions" do
+      uploader = Class.new(Saviour::BaseUploader) do
+        store_dir { "/store/dir" }
+
+        version(:thumb)
+        version(:thumb_2)
+      end
+
+      klass = Class.new(Test) do
+        include Saviour
+        attach_file :file, uploader
+      end
+
+      expect(klass.attached_files).to eq({file: [:thumb, :thumb_2]})
+
+      klass2 = Class.new(Test) do
+        include Saviour
+        attach_file :file, Saviour::BaseUploader
+      end
+
+      expect(klass2.attached_files).to eq({file: []})
+    end
+  end
 end

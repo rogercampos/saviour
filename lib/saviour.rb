@@ -83,7 +83,7 @@ module Saviour
     end
 
     def attached_files
-      @model.class.__saviour_attached_files || {}
+      @model.class.attached_files || {}
     end
 
     def run_validation(column, version, method_or_block)
@@ -118,7 +118,7 @@ module Saviour
   included do
     raise(NoActiveRecordDetected, "Error: ActiveRecord not detected in #{self}") unless self.ancestors.include?(ActiveRecord::Base)
 
-    class_attribute(:__saviour_attached_files, :__saviour_validations)
+    class_attribute(:attached_files, :__saviour_validations)
 
     after_destroy { ModelHooks.new(self).delete! }
     after_save { ModelHooks.new(self).save! }
@@ -126,7 +126,7 @@ module Saviour
   end
 
   def reload
-    self.class.__saviour_attached_files.each do |attach_as, versions|
+    self.class.attached_files.each do |attach_as, versions|
       (versions + [nil]).each { |version| instance_variable_set("@__uploader_#{version}_#{attach_as}", nil) }
     end
     super
@@ -134,7 +134,7 @@ module Saviour
 
   module ClassMethods
     def attach_file(attach_as, uploader_klass)
-      self.__saviour_attached_files ||= {}
+      self.attached_files ||= {}
       versions = uploader_klass.versions || []
 
       ([nil] + versions).each do |version|
@@ -158,8 +158,8 @@ module Saviour
         send(attach_as).changed?
       end
 
-      self.__saviour_attached_files[attach_as] ||= []
-      self.__saviour_attached_files[attach_as] += versions
+      self.attached_files[attach_as] ||= []
+      self.attached_files[attach_as] += versions
     end
 
     def attach_validation(attach_as, method_name = nil, &block)
