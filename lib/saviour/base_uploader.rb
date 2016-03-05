@@ -181,6 +181,10 @@ module Saviour
         @processors ||= []
       end
 
+      def versions
+        @versions ||= []
+      end
+
       def run(name = nil, opts = {}, type = :memory, &block)
         element = Element.new(@current_version, name || block)
 
@@ -202,9 +206,13 @@ module Saviour
       end
 
       def version(name, &block)
-        @current_version = name
-        instance_eval(&block)
-        @current_version = nil
+        versions.push(name)
+
+        if block
+          @current_version = name
+          instance_eval(&block)
+          @current_version = nil
+        end
       end
     end
   end

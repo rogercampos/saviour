@@ -46,7 +46,7 @@ end
 class Model < ActiveRecord::Base
   include Saviour
 
-  attach_file :file, SimpleUploader, versions: [:thumb, :copy_without_filter]
+  attach_file :file, SimpleUploader
   attach_validation(:file) do |contents|
     errors.add(:file, "Cannot start with 'A'") if contents.start_with?("A")
   end

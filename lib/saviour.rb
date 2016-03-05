@@ -122,11 +122,9 @@ module Saviour
   end
 
   module ClassMethods
-    def attach_file(attach_as, uploader_klass, opts = {})
+    def attach_file(attach_as, uploader_klass)
       self.__saviour_attached_files ||= {}
-
-      versions = opts.fetch(:versions, [])
-
+      versions = uploader_klass.versions || []
 
       ([nil] + versions).each do |version|
         column_name = ColumnNamer.new(attach_as, version).name

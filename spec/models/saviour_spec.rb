@@ -19,14 +19,26 @@ describe Saviour do
     }.to raise_error(RuntimeError)
   end
 
-  it "error if column not present on version" do
-    expect {
-      Class.new(Test) do
-        include Saviour
+  context do
+    it "error if column not present on version" do
+      uploader = Class.new(Saviour::BaseUploader) do
+        store_dir { "/store/dir" }
 
-        attach_file :file, Saviour::BaseUploader, versions: [:not_present]
+        version(:thumb) do
+          store_dir { "/versions/store/dir" }
+        end
+
+        version(:not_present)
       end
-    }.to raise_error(RuntimeError)
+
+      expect {
+        Class.new(Test) do
+          include Saviour
+
+          attach_file :file, uploader
+        end
+      }.to raise_error(RuntimeError)
+    end
   end
 
   it "does not raise error if table is not present" do
