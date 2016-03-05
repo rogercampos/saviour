@@ -48,19 +48,9 @@ module Saviour
           original_content = @model.send(column).source_data
           versions.each { |version| @model.send(column, version).assign(StringSource.new(original_content, default_version_filename(column, version))) }
 
-          ([nil] + versions).each do |version|
-            name = ColumnNamer.new(column, version).name
-            Config.storage.delete(@model.read_attribute(name)) if @model.read_attribute(name)
-            upload_file(column, version)
-          end
+          ([nil] + versions).each { |version| upload_file(column, version) }
         else
-          versions.each do |version|
-            if @model.send(column, version).changed?
-              name = ColumnNamer.new(column, version).name
-              Config.storage.delete(@model.read_attribute(name)) if @model.read_attribute(name)
-              upload_file(column, version)
-            end
-          end
+          versions.each { |version| upload_file(column, version) if @model.send(column, version).changed? }
         end
       end
     end
@@ -79,8 +69,10 @@ module Saviour
     end
 
     def upload_file(column, version)
+      name = ColumnNamer.new(column, version).name
+      Config.storage.delete(@model.read_attribute(name)) if @model.read_attribute(name)
       new_path = @model.send(column, version).write
-      @model.update_column(ColumnNamer.new(column, version).name, new_path)
+      @model.update_column(name, new_path)
     end
 
     def attached_files
