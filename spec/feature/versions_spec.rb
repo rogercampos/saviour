@@ -133,5 +133,37 @@ describe "saving a new file" do
         end
       end
     end
+
+    context do
+      let(:uploader) {
+        Class.new(Saviour::BaseUploader) do
+          store_dir { "/store/dir" }
+
+          version(:thumb) do
+            store_dir { "/versions/store/dir" }
+            run { |_, filename| ["modified_content", filename] }
+          end
+        end
+      }
+
+      it "runs the processors for that version only" do
+        with_test_file("example.xml") do |example|
+          a = klass.create!
+          expect(a.update_attributes(file: example)).to be_truthy
+          expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+          expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(example, ".*")}_thumb.xml"
+
+          with_test_file("camaloon.jpg") do |ex2, filename|
+            a.file(:thumb).assign(ex2)
+
+            expect(a.save!).to be_truthy
+
+            expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+            expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(filename, ".*")}.jpg"
+            expect(Saviour::Config.storage.read(a[:file_thumb])).to eq "modified_content"
+          end
+        end
+      end
+    end
   end
 end
