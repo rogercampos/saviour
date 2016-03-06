@@ -15,14 +15,14 @@ describe Saviour::BaseUploader do
     subject { Class.new(Saviour::BaseUploader) }
 
     it do
-      subject.run :hola
+      subject.process :hola
       expect(subject.processors[0][:element].method_or_block).to eq :hola
       expect(subject.processors[0][:opts]).to eq({})
     end
 
     it do
-      subject.run :a
-      subject.run :resize, width: 50
+      subject.process :a
+      subject.process :resize, width: 50
 
       expect(subject.processors[0][:element].method_or_block).to eq :a
       expect(subject.processors[0][:opts]).to eq({})
@@ -32,7 +32,7 @@ describe Saviour::BaseUploader do
     end
 
     it do
-      subject.run { 5 }
+      subject.process { 5 }
       expect(subject.processors[0][:element].method_or_block).to respond_to :call
       expect(subject.processors[0][:element].method_or_block.call).to eq 5
     end
@@ -55,7 +55,7 @@ describe Saviour::BaseUploader do
     end
 
     it "is not accessible from subclasses, works in isolation" do
-      subject.run :hola
+      subject.process :hola
       expect(subject.processors[0][:element].method_or_block).to eq :hola
       expect(subject.processors[0][:opts]).to eq({})
 
@@ -65,9 +65,9 @@ describe Saviour::BaseUploader do
 
     describe "version" do
       it "stores as elements with the given version" do
-        subject.run :hola
+        subject.process :hola
         subject.version(:thumb) do
-          run :resize_to_thumb
+          process :resize_to_thumb
         end
 
         expect(subject.processors[0][:element].method_or_block).to eq :hola
@@ -80,10 +80,10 @@ describe Saviour::BaseUploader do
       end
 
       it "respects ordering" do
-        subject.run :hola
-        subject.version(:thumb) { run :resize_to_thumb }
-        subject.run :top_level
-        subject.version(:another) { run(:foo) }
+        subject.process :hola
+        subject.version(:thumb) { process :resize_to_thumb }
+        subject.process :top_level
+        subject.version(:another) { process(:foo) }
 
         expect(subject.processors[0][:element].method_or_block).to eq :hola
         expect(subject.processors[0][:element].version).to eq nil
@@ -148,7 +148,7 @@ describe Saviour::BaseUploader do
           ["#{contents}-x2", filename]
         end
 
-        run :resize
+        process :resize
       } }
 
       it "calls the processors" do
@@ -166,8 +166,8 @@ describe Saviour::BaseUploader do
           ["#{contents}-x2", filename]
         end
 
-        run :resize
-        run { |content, filename| ["#{content}_x9", "prefix-#{filename}"] }
+        process :resize
+        process { |content, filename| ["#{content}_x9", "prefix-#{filename}"] }
       } }
 
       it "respects ordering on processor calling" do
@@ -184,7 +184,7 @@ describe Saviour::BaseUploader do
           ["#{contents}-#{opts[:width]}-#{opts[:height]}", filename]
         end
 
-        run :resize, width: 50, height: 10
+        process :resize, width: 50, height: 10
       } }
 
       it "calls the method using the stored arguments" do
@@ -201,8 +201,8 @@ describe Saviour::BaseUploader do
           [contents, "#{model.id}_#{filename}"]
         end
 
-        run :rename
-        run { |content, filename| [content, "#{model.name}_#{filename}"] }
+        process :rename
+        process { |content, filename| [content, "#{model.name}_#{filename}"] }
       } }
 
       let(:model) { double(id: 8, name: "Robert") }
@@ -229,19 +229,19 @@ describe Saviour::BaseUploader do
         } }
 
         it do
-          expect(Saviour::BaseUploader::StoreDirExtractor.new(subject).store_dir).to eq "/thumb/store/dir"
+          expect(Saviour::Uploader::StoreDirExtractor.new(subject).store_dir).to eq "/thumb/store/dir"
         end
       end
 
       context "is the last one defined without version if not specified per version" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
           store_dir { "/store/dir" }
-          version(:thumb) { run(:whatever) }
+          version(:thumb) { process(:whatever) }
           store_dir { "/store/dir/second" }
         } }
 
         it do
-          expect(Saviour::BaseUploader::StoreDirExtractor.new(subject).store_dir).to eq "/store/dir/second"
+          expect(Saviour::Uploader::StoreDirExtractor.new(subject).store_dir).to eq "/store/dir/second"
         end
       end
 
@@ -265,7 +265,7 @@ describe Saviour::BaseUploader do
 
           version(:thumb) do
             store_dir { "/versions/store/dir" }
-            run { |contents, name| [contents, "2_#{name}"] }
+            process { |contents, name| [contents, "2_#{name}"] }
           end
         } }
 
@@ -285,11 +285,11 @@ describe Saviour::BaseUploader do
       context "multiple definitions" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
           store_dir { "/store/dir" }
-          run { |contents, name| ["#{contents}_altered", name] }
+          process { |contents, name| ["#{contents}_altered", name] }
 
           version(:thumb) do
             store_dir { "/versions/store/dir" }
-            run { |contents, name| [contents, "2_#{name}"] }
+            process { |contents, name| [contents, "2_#{name}"] }
           end
         } }
 
@@ -309,19 +309,19 @@ describe Saviour::BaseUploader do
       context "consecutive versions" do
         let(:uploader) { Class.new(Saviour::BaseUploader) {
           store_dir { "/store/dir" }
-          run { |contents, name| ["#{contents}_altered", name] }
+          process { |contents, name| ["#{contents}_altered", name] }
 
           version(:thumb) do
             store_dir { "/versions/store/dir" }
-            run { |contents, name| ["thumb_#{contents}", "2_#{name}"] }
+            process { |contents, name| ["thumb_#{contents}", "2_#{name}"] }
           end
 
           version(:thumb_2) do
             store_dir { "/versions/store/dir" }
-            run { |contents, name| ["thumb_2_#{contents}", "3_#{name}"] }
+            process { |contents, name| ["thumb_2_#{contents}", "3_#{name}"] }
           end
 
-          run { |contents, name| ["last_transform_#{contents}", name] }
+          process { |contents, name| ["last_transform_#{contents}", name] }
         } }
 
         it do
@@ -345,7 +345,7 @@ describe Saviour::BaseUploader do
     end
   end
 
-  describe "#run_with_file" do
+  describe "#process_with_file" do
     subject { uploader.new(data: {model: "model", attached_as: "attached_as"}) }
 
     context do
@@ -357,7 +357,7 @@ describe Saviour::BaseUploader do
           [file, filename]
         end
 
-        run_with_file :foo
+        process_with_file :foo
       } }
 
       it "calls the processors" do
@@ -371,16 +371,16 @@ describe Saviour::BaseUploader do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
         store_dir { "/store/dir" }
 
-        run do |contents, filename|
+        process do |contents, filename|
           ["#{contents}_first_run", filename]
         end
 
-        run_with_file do |file, filename|
+        process_with_file do |file, filename|
           ::File.write(file.path, "#{::File.read(file.path)}-modified-contents")
           [file, filename]
         end
 
-        run :last_run
+        process :last_run
 
         def last_run(contents, filename)
           ["pre-#{contents}", "pre-#{filename}"]

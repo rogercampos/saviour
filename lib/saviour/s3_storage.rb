@@ -9,7 +9,7 @@ module Saviour
     end
 
     def write(contents, path)
-      raise(RuntimeError, "The path you're trying to write already exists!") if exists?(path) && @overwrite_protection
+      raise(RuntimeError, "The path you're trying to write already exists!") if @overwrite_protection && exists?(path)
 
       path = sanitize_leading_slash(path)
       directory.files.create(

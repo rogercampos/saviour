@@ -7,7 +7,7 @@ describe "access to model data from uploaders" do
   let(:uploader) {
     Class.new(Saviour::BaseUploader) do
       store_dir { "/store/dir/#{model.id}" }
-      run { |contents, name| [contents, "#{model.id}-#{attached_as}-#{name}"] }
+      process { |contents, name| [contents, "#{model.id}-#{attached_as}-#{name}"] }
     end
   }
 

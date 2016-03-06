@@ -69,7 +69,7 @@ describe "saving a new file" do
 
         version(:thumb) do
           store_dir { "/versions/store/dir" }
-          run { |contents, name| ["#{contents}_for_version_thumb", name] }
+          process { |contents, name| ["#{contents}_for_version_thumb", name] }
         end
       end
     }
@@ -141,7 +141,7 @@ describe "saving a new file" do
 
           version(:thumb) do
             store_dir { "/versions/store/dir" }
-            run { |_, filename| ["modified_content", filename] }
+            process { |_, filename| ["modified_content", filename] }
           end
         end
       }
