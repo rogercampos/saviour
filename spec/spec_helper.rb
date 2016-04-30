@@ -33,6 +33,8 @@ RSpec.configure do |config|
       example.run
     }
   end
+
+  config.after { Fog::Mock.reset }
 end
 
 def with_tempfile(ext = ".jpg")
@@ -77,8 +79,12 @@ class MockedS3Helper
     directory.files.get(path).destroy
   end
 
+  def head(path)
+    directory.files.head(path)
+  end
+
   def exists?(path)
-    !!directory.files.head(path)
+    !!head(path)
   end
 
   def public_url(path)

@@ -5,6 +5,7 @@ module Saviour
       @public_url_prefix = conf.delete(:public_url_prefix)
       @conf = conf
       @overwrite_protection = conf.delete(:overwrite_protection) { true }
+      @create_options = conf.delete(:create_options) { {} }
       assert_directory_exists!
     end
 
@@ -12,10 +13,11 @@ module Saviour
       raise(RuntimeError, "The path you're trying to write already exists!") if @overwrite_protection && exists?(path)
 
       path = sanitize_leading_slash(path)
-      directory.files.create(
-          key: path,
-          body: contents,
-          public: true
+      directory.files.create({
+                                 key: path,
+                                 body: contents,
+                                 public: true
+                             }.merge(@create_options)
       )
     end
 

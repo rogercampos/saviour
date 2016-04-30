@@ -76,6 +76,19 @@ describe Saviour::S3Storage do
       expect(subject.exists?("/folder/file.out")).to be_truthy
       expect(subject.exists?("////folder/file.out")).to be_truthy
     end
+
+    describe "fog create options" do
+      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: "https://fake-bucket.s3.amazonaws.com", create_options: {'Cache-Control' => 'max-age=31536000'}) }
+
+      it "uses passed options to create new files in S3" do
+        with_test_file("camaloon.jpg") do |file, _|
+          contents = file.read
+          subject.write(contents, destination_path)
+          file_data = mocked_s3.head(destination_path)
+          expect(file_data.cache_control).to eq "max-age=31536000"
+        end
+      end
+    end
   end
 
   describe "#read" do

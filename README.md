@@ -246,11 +246,23 @@ the `host` option, as well as `region`, etc.
 
 The `exists?` method uses a head request to verify existence, so it doesn't actually download the file.
 
-All files will be created as public.
+All files will be created as public by default, but you can set an additional argument when initializing the storage to
+declare options to be used when creating files to S3, and those options will take precedence. Use this for example to
+set an expiration time for the asset. Example:
+
+```
+Saviour::Config.storage = Saviour::S3Storage.new(
+  bucket: "my-bucket-name",
+  aws_access_key_id: "stub",
+  aws_secret_access_key: "stub",
+  create_options: {public: false, 'Cache-Control' => 'max-age=31536000'}
+)
+```
 
 This storage includes a feature of overwrite protection, raising an exception if an attempt is made of writing something
 on a path that already exists. This behaviour in enabled by default, but you can turn it off by passing an additional
-argument when instantiating the storage: `overwrite_protection: false`.
+argument when instantiating the storage: `overwrite_protection: false`. This feature requires an additional HEAD request
+to verify existence for every write.
 
 
 ## Source abstraction
