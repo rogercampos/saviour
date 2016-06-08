@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 describe "saving a new file" do
-  before { Saviour::Config.storage = Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com") }
-  after { Saviour::Config.storage = nil }
+  before { allow(Saviour::Config).to receive(:storage).and_return(Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com")) }
 
   let(:uploader) {
     Class.new(Saviour::BaseUploader) {

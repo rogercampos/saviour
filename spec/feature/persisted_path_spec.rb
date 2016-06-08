@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 describe "persisted path" do
-  before { Saviour::Config.storage = Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com") }
-  after { Saviour::Config.storage = nil }
+  before { allow(Saviour::Config).to receive(:storage).and_return(Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com")) }
 
   context "can change the default_path on the uploader and previous instances are not affected" do
     it do
