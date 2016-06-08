@@ -180,8 +180,9 @@ You must configure Saviour by providing the storage to use:
 Saviour::Config.storage = MyStorageImplementation.new
 ```
 
-The provided storage object will be used for all the lifespan of the running application, for all the file uploads
-handled by Saviour.
+The provided storage object is considered a global configuration state that will be used by Saviour for all mounters.
+However, this configuration is thread-safe and can be changed at runtime, allowing you in practice to work with different
+storages by swapping them depending on your use case.
 
 
 ### public_url
@@ -389,7 +390,7 @@ Saviour::Config.processing_enabled = true
 ```
 
 You can use this when running tests, for example, or if you want processors to not execute for some reason. The flag can be
-changed in real time.
+changed in real time and is thread-safe.
 
 
 ## Versions

@@ -1,13 +1,16 @@
 module Saviour
-  module Config
-    extend self
-
-    attr_writer :storage
-    def storage
-      @storage || raise(RuntimeError, "You need to provide a storage! Set Saviour::Config.storage = xxx")
+  class Config
+    class NotImplemented
+      def method_missing(*)
+        raise(RuntimeError, "You need to provide a storage! Set Saviour::Config.storage = xxx")
+      end
     end
 
-    attr_accessor :processing_enabled
-    @processing_enabled = true
+    extend ActiveSupport::PerThreadRegistry
+
+    attr_accessor :storage, :processing_enabled
+
+    self.processing_enabled = true
+    self.storage = NotImplemented.new
   end
 end
