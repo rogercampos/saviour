@@ -11,10 +11,9 @@ describe "access to model data from uploaders" do
   }
 
   let(:klass) {
-    a = Class.new(Test)
-    a.include Saviour
-    a.attach_file :file, uploader
-    a
+    klass = Class.new(Test) { include Saviour }
+    klass.attach_file :file, uploader
+    klass
   }
 
   describe "file store" do
