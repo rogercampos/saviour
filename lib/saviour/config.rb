@@ -6,11 +6,27 @@ module Saviour
       end
     end
 
-    extend ActiveSupport::PerThreadRegistry
+    class << self
+      def processing_enabled
+        Thread.current["Saviour::Config"] ||= {}
+        Thread.current["Saviour::Config"][:processing_enabled] || true
+      end
 
-    attr_accessor :storage, :processing_enabled
+      def processing_enabled=(value)
+        Thread.current["Saviour::Config"] ||= {}
+        Thread.current["Saviour::Config"][:processing_enabled] = value
+      end
 
-    self.processing_enabled = true
-    self.storage = NotImplemented.new
+
+      def storage
+        Thread.current["Saviour::Config"] ||= {}
+        Thread.current["Saviour::Config"][:storage] || Thread.main["Saviour::Config"][:storage] || NotImplemented.new
+      end
+
+      def storage=(value)
+        Thread.current["Saviour::Config"] ||= {}
+        Thread.current["Saviour::Config"][:storage] = value
+      end
+    end
   end
 end
