@@ -21,7 +21,19 @@ connection_opts = case ENV.fetch('DB', "sqlite")
 ActiveRecord::Base.establish_connection(connection_opts)
 
 ActiveRecord::Base.logger = Logger.new(STDOUT) if ENV['DEBUG']
+
+def silence_stream(stream)
+  old_stream = stream.dup
+  stream.reopen(RbConfig::CONFIG['host_os'] =~ /mswin|mingw/ ? 'NUL:' : '/dev/null')
+  stream.sync = true
+  yield
+ensure
+  stream.reopen(old_stream)
+  old_stream.close
+end
+
 silence_stream(STDOUT) { require 'support/schema' }
+
 require 'support/models'
 
 RSpec.configure do |config|

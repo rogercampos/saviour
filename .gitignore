@@ -18,3 +18,4 @@ tmp
 spec/support/test_data_dir/*
 .idea
 .rbenv-gemsets
+*.gemfile.lock

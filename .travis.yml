@@ -5,6 +5,19 @@ rvm:
   - 2.2.4
   - 2.3.0
 
+gemfile:
+  - gemfiles/4.0.gemfile
+  - gemfiles/4.1.gemfile
+  - gemfiles/4.2.gemfile
+  - gemfiles/5.0.gemfile
+
 addons:
   code_climate:
     repo_token: abb288da5fac3efc45be30ffb37085314b9189ddccedf2cc68282777477e21c5
+
+matrix:
+  exclude:
+    - rvm: 2.0.0
+      gemfile: gemfiles/5.0.gemfile
+    - rvm: 2.1.8
+      gemfile: gemfiles/5.0.gemfile
