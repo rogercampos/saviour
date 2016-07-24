@@ -179,7 +179,7 @@ describe Saviour::File do
       test_exception = Class.new(Exception)
 
       begin
-        file.with_copy {|_| raise(test_exception, "some exception within the block") }
+        file.with_copy { |_| raise(test_exception, "some exception within the block") }
       rescue test_exception
       end
     end
@@ -203,7 +203,7 @@ describe Saviour::File do
     end
 
     it "it's false when persisted and assigned" do
-      file = Saviour::File.new(uploader_klass, Test.create!(file: example_file), :file)
+      file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path/file.rar"), :file)
       expect(file).not_to be_blank
     end
   end

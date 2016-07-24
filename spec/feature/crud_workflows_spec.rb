@@ -81,7 +81,13 @@ describe "saving a new file" do
     it "don't create anything if save do not completes (halt during before_save)" do
       klass = Class.new(Test) do
         attr_accessor :fail_at_save
-        before_save { !fail_at_save }
+        before_save {
+          if ActiveRecord.version >= Gem::Version.new("5.0")
+            throw(:abort) if fail_at_save
+          else
+            !fail_at_save
+          end
+        }
         include Saviour
       end
       klass.attach_file :file, uploader
