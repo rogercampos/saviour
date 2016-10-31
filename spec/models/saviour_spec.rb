@@ -4,7 +4,7 @@ describe Saviour do
   it "raises error if included in a non active record class" do
     expect {
       Class.new do
-        include Saviour
+        include Saviour::Model
       end
     }.to raise_error(Saviour::NoActiveRecordDetected)
   end
@@ -12,7 +12,7 @@ describe Saviour do
   it "error if column not present" do
     expect {
       Class.new(Test) do
-        include Saviour
+        include Saviour::Model
 
         attach_file :not_present, Saviour::BaseUploader
       end
@@ -33,7 +33,7 @@ describe Saviour do
 
       expect {
         Class.new(Test) do
-          include Saviour
+          include Saviour::Model
 
           attach_file :file, uploader
         end
@@ -46,7 +46,7 @@ describe Saviour do
 
     expect {
       Class.new(Test) do
-        include Saviour
+        include Saviour::Model
 
         attach_file :not_present, Saviour::BaseUploader
       end
@@ -63,18 +63,23 @@ describe Saviour do
       end
 
       klass = Class.new(Test) do
-        include Saviour
+        include Saviour::Model
         attach_file :file, uploader
       end
 
       expect(klass.attached_files).to eq({file: [:thumb, :thumb_2]})
 
       klass2 = Class.new(Test) do
-        include Saviour
+        include Saviour::Model
         attach_file :file, Saviour::BaseUploader
       end
 
       expect(klass2.attached_files).to eq({file: []})
     end
+  end
+
+  it "doens't mess with default File constant" do
+    # Constant lookup in ruby works by lexical scope, so we can't create classes dynamically like above.
+    expect(TestForSaviourFileResolution.new.foo).to be_falsey
   end
 end

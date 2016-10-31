@@ -117,7 +117,7 @@ module Saviour
 
     def persisted_path
       if @model.persisted? || @model.destroyed?
-        @model.read_attribute(ColumnNamer.new(@attached_as, @version).name)
+        @model.read_attribute(::Saviour::Model::ColumnNamer.new(@attached_as, @version).name)
       end
     end
   end

@@ -56,12 +56,14 @@ to an ActiveRecord object) and processings. See the following example of a model
 
 ```
 class Post < ActiveRecord::Base
-  # The posts table must have an `image` String column.
+  include Saviour::Model
+
+  # The posts table must have an `image` string column.
   attach_file :image, PostImageUploader
 end
 
 class PostImageUploader < Saviour::BaseUploader
-  store_dir! { "/default/path/#{model.id}/#{attached_as}" }
+  store_dir { "/default/path/#{model.id}/#{attached_as}" }
 
   process :resize, width: 500, height: 500
 
@@ -281,7 +283,7 @@ and UrlSource.
 
 ### StringSource
 
-This is just a wrapper class that gives no additional behaviour except for implementing the required API. Use it as:
+This is just a wrapper class that gives no additional behavior except for implementing the required API. Use it as:
 
 ```
 foo = Saviour::StringSource.new("my raw contents", "filename.jpg")
@@ -310,7 +312,7 @@ example:
 
 ```
 class ExampleUploader < Saviour::BaseUploader
-  store_dir! { "/default/path/#{model.id}" }
+  store_dir { "/default/path/#{model.id}" }
 
   process :resize, width: 50, height: 50
 
@@ -324,7 +326,7 @@ class ExampleUploader < Saviour::BaseUploader
   end
 
   version(:thumb) do
-    store_dir! { "/default/path/#{model.id}/versions" }
+    store_dir { "/default/path/#{model.id}/versions" }
     process :resize, with: 10, height: 10
   end
 
@@ -431,6 +433,7 @@ Example of validations:
 
 ```
 class Post < ActiveRecord::Base
+  include Saviour::Model
   attach_file :image, PostImageUploader
 
   attach_validation(:image) do |contents, filename|
@@ -447,6 +450,7 @@ Validations can also be declared passing a method name instead of a block, like 
 
 ```
 class Post < ActiveRecord::Base
+  include Saviour::Model
   attach_file :image, PostImageUploader
   attach_validation :image, :check_size
 

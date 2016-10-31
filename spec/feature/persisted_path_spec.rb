@@ -6,7 +6,7 @@ describe "persisted path" do
   context "can change the default_path on the uploader and previous instances are not affected" do
     it do
       uploader = Class.new(Saviour::BaseUploader) { store_dir { "/store/dir" } }
-      klass = Class.new(Test) { include Saviour }
+      klass = Class.new(Test) { include Saviour::Model }
       klass.attach_file :file, uploader
 
       with_test_file("example.xml") do |example|

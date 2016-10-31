@@ -6,7 +6,7 @@ describe "reload model" do
   context "updates the Saviour::File instance" do
     it do
       uploader = Class.new(Saviour::BaseUploader) { store_dir { "/store/dir" } }
-      klass = Class.new(Test) { include Saviour }
+      klass = Class.new(Test) { include Saviour::Model }
       klass.attach_file :file, uploader
       a = klass.create!
       b = klass.find(a.id)

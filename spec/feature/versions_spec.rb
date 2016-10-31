@@ -14,7 +14,7 @@ describe "saving a new file" do
   }
 
   let(:klass) {
-    a = Class.new(Test) { include Saviour }
+    a = Class.new(Test) { include Saviour::Model }
     a.attach_file :file, uploader
     a
   }

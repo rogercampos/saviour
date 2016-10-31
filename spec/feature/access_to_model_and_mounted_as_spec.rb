@@ -11,7 +11,7 @@ describe "access to model data from uploaders" do
   }
 
   let(:klass) {
-    klass = Class.new(Test) { include Saviour }
+    klass = Class.new(Test) { include Saviour::Model }
     klass.attach_file :file, uploader
     klass
   }

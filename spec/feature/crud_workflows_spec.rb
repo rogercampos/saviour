@@ -10,7 +10,7 @@ describe "saving a new file" do
   }
 
   let(:klass) {
-    a = Class.new(Test) { include Saviour }
+    a = Class.new(Test) { include Saviour::Model }
     a.attach_file :file, uploader
     a
   }
@@ -88,7 +88,7 @@ describe "saving a new file" do
             !fail_at_save
           end
         }
-        include Saviour
+        include Saviour::Model
       end
       klass.attach_file :file, uploader
 
