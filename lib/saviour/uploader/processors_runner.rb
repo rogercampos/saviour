@@ -10,7 +10,9 @@ module Saviour
       end
 
       def matching_processors
-        @uploader.class.processors.select { |processor| !processor[:element].versioned? || processor[:element].version == @version_name }
+        @uploader.class.processors.select do |processor|
+          !processor[:element].versioned? || processor[:element].version == @version_name
+        end
       end
 
       def file

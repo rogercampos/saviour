@@ -24,6 +24,8 @@ module Saviour
     end
 
     def write(contents, filename)
+      return unless version_matches_conditionals?
+
       store_dir = Uploader::StoreDirExtractor.new(self).store_dir
       raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
 
@@ -36,6 +38,24 @@ module Saviour
       path
     end
 
+    def version_matches_conditionals?
+      if @version_name
+        method_or_block = self.class.versions[@version_name][:if]
+
+        if method_or_block
+          if method_or_block.respond_to?(:call)
+            instance_exec(&method_or_block)
+          else
+            send(method_or_block)
+          end
+        else
+          true
+        end
+      else
+        true
+      end
+    end
+
     class << self
       def store_dirs
         @store_dirs ||= []
@@ -46,7 +66,7 @@ module Saviour
       end
 
       def versions
-        @versions ||= []
+        @versions ||= {}
       end
 
       def process(name = nil, opts = {}, type = :memory, &block)
@@ -69,8 +89,8 @@ module Saviour
         store_dirs.push(element)
       end
 
-      def version(name, &block)
-        versions.push(name)
+      def version(name, opts = {}, &block)
+        versions[name] = opts
 
         if block
           @current_version = name
