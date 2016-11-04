@@ -5,8 +5,6 @@ require 'active_support/core_ext'
 require 'active_support/core_ext/module/attribute_accessors'
 require 'fog/aws'
 
-require 'saviour/processors/digest'
-
 require 'saviour/version'
 require 'saviour/base_uploader'
 require 'saviour/file'

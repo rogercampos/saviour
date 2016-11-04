@@ -485,8 +485,8 @@ This is a compilation of common questions or features regarding file uploads.
 
 ### Digested filename
 
-A common use case is to create a processor to include a digest of the file in the filename. The implementation is left
-for the user, but a simple example of such processor is this:
+A common use case is to create a processor to include a digest of the file in the filename, in order to automatically
+expire caches. The implementation is left for the user, but a simple example of such processor is this:
 
 ```
   def digest_filename(contents, filename, opts = {})
