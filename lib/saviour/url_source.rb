@@ -24,7 +24,7 @@ module Saviour
     private
 
     def resolve(uri, max_redirects = MAX_REDIRECTS)
-      raise RuntimeError, "Max number of allowed redirects reached (#{MAX_REDIRECTS}) when resolving #{@uri}" if max_redirects == 0
+      raise RuntimeError, "Max number of allowed redirects reached (#{MAX_REDIRECTS}) when resolving #{uri}" if max_redirects == 0
 
       response = Net::HTTP.get_response(uri)
 
