@@ -155,6 +155,11 @@ describe Saviour::File do
       file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path/file.rar"), :file)
       expect(file.filename).to eq "file.rar"
     end
+
+    it "returns nil if the file doesn't exist" do
+      file = Saviour::File.new(uploader_klass, Test.create!(file: nil), :file)
+      expect(file.filename).to be_nil
+    end
   end
 
   describe "#with_copy" do
@@ -176,7 +181,7 @@ describe Saviour::File do
       expect(mocked_tmpfile).to receive(:close)
       expect(mocked_tmpfile).to receive(:delete)
 
-      test_exception = Class.new(Exception)
+      test_exception = Class.new(StandardError)
 
       begin
         file.with_copy { |_| raise(test_exception, "some exception within the block") }
