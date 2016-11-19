@@ -485,8 +485,8 @@ This is a compilation of common questions or features regarding file uploads.
 
 ### Digested filename
 
-A common use case is to create a processor to include a digest of the file in the filename. The implementation is left
-for the user, but a simple example of such processor is this:
+A common use case is to create a processor to include a digest of the file in the filename, in order to automatically
+expire caches. The implementation is left for the user, but a simple example of such processor is this:
 
 ```
   def digest_filename(contents, filename, opts = {})
@@ -501,8 +501,35 @@ for the user, but a simple example of such processor is this:
   end
 ```
 
-### Getting metadata from the file
 ### How to recreate versions
+
+Recreating a version based on the master file can be easily done by just assigning the master file to the version and
+saving the model. You just need a little bit more code in order to preserve the current version filename, for example,
+if that's something you want.
+
+An example service that can do that is the following:
+
+```
+class SaviourRecreateVersionsService
+  def initialize(model)
+    @model = model
+  end
+
+  def recreate!(attached_as, *versions)
+    base = @model.send(attached_as).read
+
+    versions.each do |version|
+      current_filename = @model.send(attached_as, version).filename
+      @model.send(attached_as, version).assign(Saviour::StringSource.new(base, current_filename))
+    end
+
+    @model.save!
+  end
+end
+```
+
+### Getting metadata from the file
+
 ### Caching across redisplays in normal forms
 ### Introspection (Class.attached_files)
 ### Processing in background

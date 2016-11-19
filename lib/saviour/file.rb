@@ -66,7 +66,7 @@ module Saviour
     end
 
     def filename
-      persisted? && ::File.basename(persisted_path)
+      ::File.basename(persisted_path) if persisted?
     end
 
     def with_copy
