@@ -2,16 +2,9 @@ language: ruby
 sudo: false
 cache: bundler
 rvm:
-  - 2.0.0
   - 2.1.8
   - 2.2.4
   - 2.3.0
-
-gemfile:
-  - gemfiles/4.0.gemfile
-  - gemfiles/4.1.gemfile
-  - gemfiles/4.2.gemfile
-  - gemfiles/5.0.gemfile
 
 addons:
   code_climate:
@@ -19,10 +12,3 @@ addons:
 
 after_success:
   - bundle exec codeclimate-test-reporter
-
-matrix:
-  exclude:
-    - rvm: 2.0.0
-      gemfile: gemfiles/5.0.gemfile
-    - rvm: 2.1.8
-      gemfile: gemfiles/5.0.gemfile

@@ -17,7 +17,6 @@ module Saviour
         Thread.current["Saviour::Config"][:processing_enabled] = value
       end
 
-
       def storage
         Thread.current["Saviour::Config"] ||= {}
         Thread.current["Saviour::Config"][:storage] || Thread.main["Saviour::Config"][:storage] || NotImplemented.new

@@ -19,3 +19,4 @@ spec/support/test_data_dir/*
 .idea
 .rbenv-gemsets
 *.gemfile.lock
+.DS_Store

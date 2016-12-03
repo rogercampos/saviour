@@ -2,47 +2,32 @@ require 'securerandom'
 
 module Saviour
   class File
-    class SourceFilenameExtractor
-      def initialize(source)
-        @source = source
-      end
-
-      def detected_filename
-        original_filename || path_filename
-      end
-
-      def original_filename
-        @source.respond_to?(:original_filename) && @source.original_filename.present? && @source.original_filename
-      end
-
-      def path_filename
-        @source.respond_to?(:path) && @source.path.present? && ::File.basename(@source.path)
-      end
-    end
-
+    attr_reader :persisted_path
 
     def initialize(uploader_klass, model, attached_as, version = nil)
       @uploader_klass, @model, @attached_as = uploader_klass, model, attached_as
       @version = version
-
-      @persisted = !!persisted_path
       @source_was = @source = nil
     end
 
+    def set_path!(path)
+      @persisted_path = path
+    end
+
     def exists?
-      persisted? && Config.storage.exists?(persisted_path)
+      persisted? && Config.storage.exists?(@persisted_path)
     end
 
     def read
-      persisted? && exists? && Config.storage.read(persisted_path)
+      persisted? && exists? && Config.storage.read(@persisted_path)
     end
 
     def delete
-      persisted? && exists? && Config.storage.delete(persisted_path)
+      persisted? && exists? && Config.storage.delete(@persisted_path)
     end
 
     def public_url
-      persisted? && Config.storage.public_url(persisted_path)
+      persisted? && Config.storage.public_url(@persisted_path)
     end
 
     alias_method :url, :public_url
@@ -52,13 +37,13 @@ module Saviour
 
       @source_data = nil
       @source = object
-      @persisted = !object
+      @persisted_path = nil if object
 
       object
     end
 
     def persisted?
-      @persisted
+      !!@persisted_path
     end
 
     def changed?
@@ -66,7 +51,7 @@ module Saviour
     end
 
     def filename
-      ::File.basename(persisted_path) if persisted?
+      ::File.basename(@persisted_path) if persisted?
     end
 
     def with_copy
@@ -96,7 +81,7 @@ module Saviour
 
       path = uploader.write(source_data, filename_to_be_assigned)
       @source_was = @source
-      @persisted = true
+      @persisted_path = path
       path
     end
 
@@ -113,12 +98,6 @@ module Saviour
 
     def uploader
       @uploader ||= @uploader_klass.new(version: @version, data: {model: @model, attached_as: @attached_as})
-    end
-
-    def persisted_path
-      if @model.persisted? || @model.destroyed?
-        @model.read_attribute(::Saviour::Model::ColumnNamer.new(@attached_as, @version).name)
-      end
     end
   end
 end

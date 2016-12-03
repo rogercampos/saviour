@@ -11,7 +11,13 @@ describe "access to model data from uploaders" do
   }
 
   let(:klass) {
-    klass = Class.new(Test) { include Saviour::Model }
+    klass = Class.new {
+      include Saviour::BasicModel
+
+      def id
+        87
+      end
+    }
     klass.attach_file :file, uploader
     klass
   }
@@ -19,10 +25,12 @@ describe "access to model data from uploaders" do
   describe "file store" do
     it do
       with_test_file("example.xml") do |example, name|
-        a = klass.create! id: 87
-        expect(a.update_attributes(file: example)).to be_truthy
-        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
-        expect(a[:file]).to eq "/store/dir/87/87-file-#{name}"
+        a = klass.new
+        a.file = example
+        path = a.file.write
+
+        expect(Saviour::Config.storage.exists?(path)).to be_truthy
+        expect(path).to eq "/store/dir/87/87-file-#{name}"
       end
     end
   end
