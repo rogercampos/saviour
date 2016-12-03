@@ -1,9 +1,7 @@
 require 'fileutils'
-require 'digest/md5'
-require 'active_support/concern'
-require 'active_support/core_ext'
-require 'active_support/core_ext/module/attribute_accessors'
 require 'fog/aws'
+
+require 'saviour/utils/class_attribute'
 
 require 'saviour/version'
 require 'saviour/base_uploader'
@@ -13,8 +11,12 @@ require 'saviour/s3_storage'
 require 'saviour/config'
 require 'saviour/string_source'
 require 'saviour/url_source'
-require 'saviour/model'
+require 'saviour/basic_model'
+require 'saviour/base_integrator'
+require 'saviour/attribute_name_calculator'
+require 'saviour/source_filename_extractor'
+require 'saviour/life_cycle'
+
 
 module Saviour
-  NoActiveRecordDetected = Class.new(StandardError)
 end

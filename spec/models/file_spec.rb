@@ -25,69 +25,35 @@ describe Saviour::File do
 
   let(:example_file) { double(read: "some file contents", path: "/my/path") }
 
-  describe "initialization" do
-    describe "derives persisted from the model" do
-      it do
-        file = Saviour::File.new(uploader_klass, Test.new, :file)
-        expect(file).not_to be_persisted
-      end
-
-      it do
-        file = Saviour::File.new(uploader_klass, Test.create!, :file)
-        expect(file).not_to be_persisted
-      end
-
-      it do
-        file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path"), :file)
-        expect(file).to be_persisted
-      end
-    end
-
-    describe "is not changed" do
-      it do
-        file = Saviour::File.new(uploader_klass, Test.new, :file)
-        expect(file).not_to be_changed
-      end
-
-      it do
-        file = Saviour::File.new(uploader_klass, Test.create!, :file)
-        expect(file).not_to be_changed
-      end
-
-      it do
-        file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path"), :file)
-        expect(file).not_to be_changed
-      end
-    end
-  end
+  let(:dummy_class) { Class.new }
 
   describe "#assign" do
     it "returns the assigned object" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       expect(file.assign(example_file)).to eq example_file
     end
 
     it "allows to reset the internal source" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       file.assign(example_file)
       expect(file.assign(nil)).to be_nil
     end
 
     it "shows error if assigned object do not respond to :read" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       expect { file.assign(6) }.to raise_error(RuntimeError)
     end
   end
 
   describe "#write" do
     it "fails without source" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       expect { file.write }.to raise_error(RuntimeError)
     end
 
     describe "filename used" do
       it "is extracted from original_filename if possible" do
-        file = Saviour::File.new(uploader_klass, Test.new, :file)
+        file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
         file.assign(double(read: "contents", original_filename: 'original.jpg', path: "/my/path/my_file.zip"))
         uploader = double
         allow(file).to receive(:uploader).and_return(uploader)
@@ -96,7 +62,7 @@ describe Saviour::File do
       end
 
       it "is extracted from path if possible" do
-        file = Saviour::File.new(uploader_klass, Test.new, :file)
+        file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
         file.assign(double(read: "contents", path: "/my/path/my_file.zip"))
         uploader = double
         allow(file).to receive(:uploader).and_return(uploader)
@@ -105,7 +71,7 @@ describe Saviour::File do
       end
 
       it "is random if cannot be guessed" do
-        file = Saviour::File.new(uploader_klass, Test.new, :file)
+        file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
         file.assign(double(read: "contents"))
         allow(SecureRandom).to receive(:hex).and_return("stubbed-random")
         uploader = double
@@ -116,7 +82,7 @@ describe Saviour::File do
     end
 
     it "returns the path" do
-      object = Test.new
+      object = dummy_class.new
       file = Saviour::File.new(uploader_klass, object, :file)
       file.assign(double(read: "contents", path: "/my/path/my_file.zip"))
       uploader = double
@@ -128,7 +94,7 @@ describe Saviour::File do
 
   describe "#changed?" do
     it "is cleared after removing the assignation" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       expect(file).not_to be_changed
       file.assign(example_file)
       expect(file).to be_changed
@@ -137,7 +103,7 @@ describe Saviour::File do
     end
 
     it "is cleared after persisting" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       file.assign(double(read: "contents", path: "/my/path/my_file.zip"))
       expect(file).to be_changed
 
@@ -152,19 +118,21 @@ describe Saviour::File do
 
   describe "#filename" do
     it "returns the filename of the persisted file" do
-      file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path/file.rar"), :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
+      file.set_path! "/mocked/path/file.rar"
       expect(file.filename).to eq "file.rar"
     end
 
     it "returns nil if the file doesn't exist" do
-      file = Saviour::File.new(uploader_klass, Test.create!(file: nil), :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       expect(file.filename).to be_nil
     end
   end
 
   describe "#with_copy" do
     it "provides a copy of the stored file" do
-      file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path/file.rar"), :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
+      file.set_path! "/path/file.jpg"
       allow(file).to receive(:read).and_return("some contents")
 
       file.with_copy do |tmpfile|
@@ -173,8 +141,10 @@ describe Saviour::File do
     end
 
     it "deletes the copied file even on exception" do
-      file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path/file.rar"), :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
+      file.set_path! "/path/file.jpg"
       allow(file).to receive(:read).and_return("some contents")
+
       mocked_tmpfile = double(binmode: "", rewind: "", flush: "", write: "")
       allow(Tempfile).to receive(:open).and_yield(mocked_tmpfile)
 
@@ -192,23 +162,25 @@ describe Saviour::File do
 
   describe "#blank?" do
     it "it's true when not yet assigned nor persisted" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       expect(file).to be_blank
     end
 
-    it "it's true when not yet assigned but persisted" do
-      file = Saviour::File.new(uploader_klass, Test.create!, :file)
-      expect(file).to be_blank
+    it "it's false when not yet assigned but persisted" do
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
+      file.set_path! "/path/dummy.jpg"
+      expect(file).not_to be_blank
     end
 
     it "it's false when not persisted but assigned" do
-      file = Saviour::File.new(uploader_klass, Test.new, :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
       file.assign example_file
       expect(file).not_to be_blank
     end
 
     it "it's false when persisted and assigned" do
-      file = Saviour::File.new(uploader_klass, Test.create!(file: "/mocked/path/file.rar"), :file)
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
+      file.set_path! "/path/dummy.jpg"
       expect(file).not_to be_blank
     end
   end

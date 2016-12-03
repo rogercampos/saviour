@@ -36,18 +36,18 @@ describe Saviour::UrlSource do
     it "retries the request 3 times on error" do
       expect(Net::HTTP).to receive(:get_response).and_return(Net::HTTPNotFound, Net::HTTPNotFound)
       expect(Net::HTTP).to receive(:get_response).and_call_original
-      a = Saviour::UrlSource.new("http://example.com/")
+      a = Saviour::UrlSource.new("http://example.org/")
       expect(a.read.length).to be > 100
     end
 
     it "succeds if the uri is valid" do
-      a = Saviour::UrlSource.new("http://example.com/")
+      a = Saviour::UrlSource.new("http://example.org/")
       expect(a.read.length).to be > 100
     end
 
     it "follows redirects" do
       response = Net::HTTPRedirection.new "1.1", "301", "Redirect"
-      expect(response).to receive(:[]).with("location").and_return("http://example.com")
+      expect(response).to receive(:[]).with("location").and_return("http://example.org")
 
       expect(Net::HTTP).to receive(:get_response).and_return(response)
       expect(Net::HTTP).to receive(:get_response).and_call_original
@@ -58,7 +58,7 @@ describe Saviour::UrlSource do
 
     it "does not follow more than 10 redirects" do
       response = Net::HTTPRedirection.new "1.1", "301", "Redirect"
-      expect(response).to receive(:[]).with("location").exactly(10).times.and_return("http://example.com")
+      expect(response).to receive(:[]).with("location").exactly(10).times.and_return("http://example.org")
       expect(Net::HTTP).to receive(:get_response).exactly(10).times.and_return(response)
 
       expect { Saviour::UrlSource.new("http://faked.blabla").read }.to raise_error(RuntimeError).with_message(/Max number of allowed redirects reached \(10\) when resolving/)
@@ -66,7 +66,7 @@ describe Saviour::UrlSource do
 
     it "fails if the redirected location is not a valid URI" do
       response = Net::HTTPRedirection.new "1.1", "301", "Redirect"
-      expect(response).to receive(:[]).with("location").and_return("http://example.com/%@(&#<<<<")
+      expect(response).to receive(:[]).with("location").and_return("http://example.org/%@(&#<<<<")
 
       expect(Net::HTTP).to receive(:get_response).and_return(response)
 
