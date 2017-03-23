@@ -11,12 +11,6 @@ describe Saviour::S3Storage do
         Saviour::S3Storage.new(bucket: "fake-bucket")
       }.to raise_error(ArgumentError)
     end
-
-    it "fails when the bucket doesn't exists" do
-      expect {
-        Saviour::S3Storage.new(bucket: "no-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub")
-      }.to raise_error(ArgumentError)
-    end
   end
 
   describe "#write" do

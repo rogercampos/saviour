@@ -6,7 +6,8 @@ module Saviour
       @conf = conf
       @overwrite_protection = conf.delete(:overwrite_protection) { true }
       @create_options = conf.delete(:create_options) { {} }
-      assert_directory_exists!
+      conf.fetch(:aws_access_key_id) { raise ArgumentError.new("aws_access_key_id is required")}
+      conf.fetch(:aws_secret_access_key) { raise ArgumentError.new("aws_secret_access_key is required")}
     end
 
     def write(contents, path)
@@ -58,10 +59,6 @@ module Saviour
 
     def sanitize_leading_slash(path)
       path.gsub(/\A\/*/, '')
-    end
-
-    def assert_directory_exists!
-      directory || raise(ArgumentError, "The bucket #{@bucket} doesn't exists or misconfigured connection.")
     end
 
     def assert_exists(path)
