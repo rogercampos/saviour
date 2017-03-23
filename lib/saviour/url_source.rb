@@ -1,4 +1,5 @@
 require 'uri'
+require 'net/http'
 
 module Saviour
   class UrlSource
