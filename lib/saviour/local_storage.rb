@@ -63,7 +63,7 @@ module Saviour
       basedir = ::File.dirname(path)
       return if basedir == "."
 
-      while basedir != "/" && Dir.entries(real_path(basedir)) == [".", ".."]
+      while basedir != "/" && Dir.entries(real_path(basedir)) - [".", ".."] ==[]
         Dir.rmdir(real_path(basedir))
         basedir = ::File.dirname(basedir)
       end
