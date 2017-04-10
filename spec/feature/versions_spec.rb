@@ -14,7 +14,7 @@ describe "saving a new file" do
   }
 
   let(:klass) {
-    a = Class.new { include Saviour::BasicModel }
+    a = Class.new(Test) { include Saviour::Model }
     a.attach_file :file, uploader
     a
   }
@@ -22,13 +22,9 @@ describe "saving a new file" do
   describe "creation following main file" do
     it do
       with_test_file("example.xml") do |example|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
-
-        path = a.file(:thumb).persisted_path
-        expect(path).not_to be_nil
-        expect(Saviour::Config.storage.exists?(path)).to be_truthy
+        a = klass.create!
+        expect(a.update_attributes(file: example)).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
       end
     end
   end
@@ -36,16 +32,14 @@ describe "saving a new file" do
   describe "deletion" do
     it do
       with_test_file("example.xml") do |example|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
+        a = klass.create!
+        a.update_attributes(file: example)
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
 
-        expect(Saviour::Config.storage.exists?(a.file(:thumb).persisted_path)).to be_truthy
-        expect(Saviour::Config.storage.exists?(a.file.persisted_path)).to be_truthy
-
-        Saviour::LifeCycle.new(a).delete!
-        expect(Saviour::Config.storage.exists?(a.file(:thumb).persisted_path)).to be_falsey
-        expect(Saviour::Config.storage.exists?(a.file.persisted_path)).to be_falsey
+        a.destroy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_falsey
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_falsey
       end
     end
   end
@@ -53,18 +47,13 @@ describe "saving a new file" do
   describe "changes following main file" do
     it do
       with_test_file("example.xml") do |example|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
-        path = a.file(:thumb).persisted_path
-        expect(Saviour::Config.storage.exists?(path)).to be_truthy
+        a = klass.create!
+        expect(a.update_attributes(file: example)).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
 
         with_test_file("camaloon.jpg") do |file|
-          a.file = file
-          Saviour::LifeCycle.new(a).save!
-          path = a.file(:thumb).persisted_path
-
-          expect(Saviour::Config.storage.exists?(path)).to be_truthy
+          a.update_attributes(file: file)
+          expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
           file.rewind
           expect(a.file(:thumb).read).to eq file.read
         end
@@ -86,9 +75,8 @@ describe "saving a new file" do
 
     it "#url" do
       with_test_file("example.xml") do |example, name|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
+        a = klass.create!
+        expect(a.update_attributes(file: example)).to be_truthy
 
         versioned_name = "#{File.basename(name, ".*")}_thumb#{File.extname(name)}"
         expect(a.file(:thumb).url).to eq "http://domain.com/versions/store/dir/#{versioned_name}"
@@ -97,9 +85,8 @@ describe "saving a new file" do
 
     it "#read" do
       with_test_file("text.txt") do |example|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
+        a = klass.create!
+        a.update_attributes(file: example)
 
         expect(a.file(:thumb).read).to eq "Hello world\n_for_version_thumb"
       end
@@ -107,24 +94,21 @@ describe "saving a new file" do
 
     it "#delete" do
       with_test_file("example.xml") do |example|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
-        expect(Saviour::Config.storage.exists?(a.file(:thumb).persisted_path)).to be_truthy
-        expect(Saviour::Config.storage.exists?(a.file.persisted_path)).to be_truthy
+        a = klass.create!
+        expect(a.update_attributes(file: example)).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
 
         a.file(:thumb).delete
-
-        expect(Saviour::Config.storage.exists?(a.file(:thumb).persisted_path)).to be_falsey
-        expect(Saviour::Config.storage.exists?(a.file.persisted_path)).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_falsey
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
       end
     end
 
     it "#exists?" do
       with_test_file("example.xml") do |example|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
+        a = klass.create!
+        expect(a.update_attributes(file: example)).to be_truthy
         expect(a.file(:thumb).exists?).to be_truthy
       end
     end
@@ -133,21 +117,18 @@ describe "saving a new file" do
   describe "assign specific version after first creation" do
     it do
       with_test_file("example.xml") do |example|
-        a = klass.new
-        a.file = example
-        Saviour::LifeCycle.new(a).save!
-
-        thumb_path = a.file(:thumb).persisted_path
-        expect(Saviour::Config.storage.exists?(thumb_path)).to be_truthy
-        expect(thumb_path).to eq "/versions/store/dir/#{File.basename(example, ".*")}_thumb.xml"
+        a = klass.create!
+        expect(a.update_attributes(file: example)).to be_truthy
+        expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+        expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(example, ".*")}_thumb.xml"
 
         with_test_file("camaloon.jpg") do |ex2, filename|
           a.file(:thumb).assign(ex2)
-          Saviour::LifeCycle.new(a).save!
-          thumb_path = a.file(:thumb).persisted_path
 
-          expect(Saviour::Config.storage.exists?(thumb_path)).to be_truthy
-          expect(thumb_path).to eq "/versions/store/dir/#{File.basename(filename, ".*")}.jpg"
+          expect(a.save!).to be_truthy
+
+          expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+          expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(filename, ".*")}.jpg"
         end
       end
     end
@@ -166,23 +147,19 @@ describe "saving a new file" do
 
       it "runs the processors for that version only" do
         with_test_file("example.xml") do |example|
-          a = klass.new
-          a.file = example
-          Saviour::LifeCycle.new(a).save!
-          thumb_path = a.file(:thumb).persisted_path
-
-          expect(Saviour::Config.storage.exists?(thumb_path)).to be_truthy
-          expect(thumb_path).to eq "/versions/store/dir/#{File.basename(example, ".*")}_thumb.xml"
+          a = klass.create!
+          expect(a.update_attributes(file: example)).to be_truthy
+          expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+          expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(example, ".*")}_thumb.xml"
 
           with_test_file("camaloon.jpg") do |ex2, filename|
             a.file(:thumb).assign(ex2)
 
-            Saviour::LifeCycle.new(a).save!
-            thumb_path = a.file(:thumb).persisted_path
+            expect(a.save!).to be_truthy
 
-            expect(Saviour::Config.storage.exists?(thumb_path)).to be_truthy
-            expect(thumb_path).to eq "/versions/store/dir/#{File.basename(filename, ".*")}.jpg"
-            expect(Saviour::Config.storage.read(thumb_path)).to eq "modified_content"
+            expect(Saviour::Config.storage.exists?(a[:file_thumb])).to be_truthy
+            expect(a[:file_thumb]).to eq "/versions/store/dir/#{File.basename(filename, ".*")}.jpg"
+            expect(Saviour::Config.storage.read(a[:file_thumb])).to eq "modified_content"
           end
         end
       end
@@ -191,16 +168,16 @@ describe "saving a new file" do
 
   describe "respects version assignation vs main file assignation on conflict" do
     it do
-      a = klass.new
+      a = klass.create!
 
       with_test_file("example.xml") do |file1, fname1|
         with_test_file("camaloon.jpg") do |file2, fname2|
           a.file.assign(file1)
           a.file(:thumb).assign(file2)
-          Saviour::LifeCycle.new(a).save!
+          a.save!
 
-          expect(a.file.persisted_path).to eq "/store/dir/#{fname1}"
-          expect(a.file(:thumb).persisted_path).to eq "/versions/store/dir/#{fname2}"
+          expect(a[:file]).to eq "/store/dir/#{fname1}"
+          expect(a[:file_thumb]).to eq "/versions/store/dir/#{fname2}"
         end
       end
     end

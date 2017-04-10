@@ -5,6 +5,13 @@ rvm:
   - 2.1.8
   - 2.2.4
   - 2.3.0
+  - 2.4.0
+
+gemfile:
+  - gemfiles/4.0.gemfile
+  - gemfiles/4.1.gemfile
+  - gemfiles/4.2.gemfile
+  - gemfiles/5.0.gemfile
 
 addons:
   code_climate:
@@ -12,3 +19,15 @@ addons:
 
 after_success:
   - bundle exec codeclimate-test-reporter
+
+matrix:
+  exclude:
+    # rails 5 requires 2.2+
+    - rvm: 2.1.8
+      gemfile: gemfiles/5.0.gemfile
+
+    # Arel support for ruby 2.4 starts in 4.2
+    - rvm: 2.4.0
+      gemfile: gemfiles/4.0.gemfile
+    - rvm: 2.4.0
+      gemfile: gemfiles/4.1.gemfile

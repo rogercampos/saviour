@@ -1,21 +1,30 @@
 module Saviour
-  class BaseIntegrator
-    def initialize(klass)
+  class Integrator
+    def initialize(klass, persistence_klass)
       @klass = klass
+      @persistence_klass = persistence_klass
     end
 
     def file_instantiator_hook(model, file_instance, attach_as, version)
-      # noop
+      layer = @persistence_klass.new(model)
+      file_instance.set_path!(layer.read(Saviour::AttributeNameCalculator.new(attach_as, version).name)) if layer.persisted?
     end
 
     def attach_file_hook(klass, attach_as, uploader_klass)
-      # noop
+      versions = uploader_klass.versions || []
+
+      ([nil] + versions).each do |version|
+        column_name = Saviour::AttributeNameCalculator.new(attach_as, version).name
+
+        if klass.table_exists? && !klass.column_names.include?(column_name.to_s)
+          raise RuntimeError, "#{klass} must have a database string column named '#{column_name}'"
+        end
+      end
     end
 
     def setup!
       raise "You cannot include Saviour twice in the same class" if @klass.respond_to?(:attached_files)
 
-      @klass.send :extend, ClassAttribute
       @klass.class_attribute :attached_files
       @klass.attached_files = {}
 
@@ -46,6 +55,15 @@ module Saviour
           define_method("#{attach_as}_changed?") do
             send(attach_as).changed?
           end
+        end
+      end
+
+      @klass.class_attribute :__saviour_validations
+
+      class << @klass
+        def attach_validation(attach_as, method_name = nil, &block)
+          self.__saviour_validations ||= Hash.new { [] }
+          self.__saviour_validations[attach_as] += [method_name || block]
         end
       end
     end

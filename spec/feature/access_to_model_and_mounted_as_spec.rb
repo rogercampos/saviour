@@ -11,8 +11,8 @@ describe "access to model data from uploaders" do
   }
 
   let(:klass) {
-    klass = Class.new {
-      include Saviour::BasicModel
+    klass = Class.new(Test) {
+      include Saviour::Model
 
       def id
         87
