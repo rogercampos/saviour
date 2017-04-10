@@ -19,7 +19,7 @@ module Saviour
       end
     end
 
-    def respond_to?(name, *)
+    def respond_to_missing?(name, *)
       @data.key?(name) || super
     end
 
@@ -27,7 +27,9 @@ module Saviour
       store_dir = Uploader::StoreDirExtractor.new(self).store_dir
       raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
 
-      contents, filename = Uploader::ProcessorsRunner.new(self, @version_name).run!(contents, filename) if Config.processing_enabled
+      if Config.processing_enabled
+        contents, filename = Uploader::ProcessorsRunner.new(self, @version_name).run!(contents, filename)
+      end
 
       path = ::File.join(store_dir, filename)
       Config.storage.write(contents, path)
@@ -51,9 +53,9 @@ module Saviour
         element = Uploader::Element.new(@current_version, name || block)
 
         if block_given?
-          processors.push({element: element, type: type})
+          processors.push(element: element, type: type)
         else
-          processors.push({element: element, type: type, opts: opts})
+          processors.push(element: element, type: type, opts: opts)
         end
       end
 
