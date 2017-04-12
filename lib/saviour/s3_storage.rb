@@ -6,8 +6,8 @@ module Saviour
       @conf = conf
       @overwrite_protection = conf.delete(:overwrite_protection) { true }
       @create_options = conf.delete(:create_options) { {} }
-      conf.fetch(:aws_access_key_id) { raise ArgumentError.new("aws_access_key_id is required")}
-      conf.fetch(:aws_secret_access_key) { raise ArgumentError.new("aws_secret_access_key is required")}
+      conf.fetch(:aws_access_key_id) { raise ArgumentError.new("aws_access_key_id is required") }
+      conf.fetch(:aws_secret_access_key) { raise ArgumentError.new("aws_secret_access_key is required") }
     end
 
     def write(contents, path)
@@ -66,11 +66,11 @@ module Saviour
     end
 
     def directory
-      @directory ||= connection.directories.get(@bucket)
+      @directory ||= connection.directories.new(key: @bucket)
     end
 
     def connection
-      @connection ||= Fog::Storage.new({provider: 'AWS'}.merge(@conf))
+      @connection ||= Fog::Storage.new({ provider: 'AWS' }.merge(@conf))
     end
   end
 end
