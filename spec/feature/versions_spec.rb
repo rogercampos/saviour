@@ -182,4 +182,73 @@ describe "saving a new file" do
       end
     end
   end
+
+  describe "conditionals" do
+    def do_test
+      a = klass.create!
+
+      with_test_file("example.xml") do |file1, fname1|
+        a.file.assign(file1)
+        a.save!
+
+        expect(a[:file]).to eq "/store/dir/#{fname1}"
+        expect(a[:file_thumb]).to be_nil
+      end
+    end
+
+    context "as method" do
+      let(:uploader) {
+        Class.new(Saviour::BaseUploader) do
+          store_dir { "/store/dir" }
+
+          version(:thumb, if: :image?) do
+            store_dir { "/versions/store/dir" }
+            process { |_, filename| ["modified_content", filename] }
+          end
+
+          def image?
+            false
+          end
+        end
+      }
+
+      it do
+        do_test
+      end
+    end
+
+    context "as a lambda" do
+      let(:uploader) {
+        Class.new(Saviour::BaseUploader) do
+          store_dir { "/store/dir" }
+
+          version(:thumb, if: -> { false }) do
+            store_dir { "/versions/store/dir" }
+            process { |_, filename| ["modified_content", filename] }
+          end
+        end
+      }
+
+      it do
+        do_test
+      end
+    end
+
+    context "as a proc" do
+      let(:uploader) {
+        Class.new(Saviour::BaseUploader) do
+          store_dir { "/store/dir" }
+
+          version(:thumb, if: Proc.new { false }) do
+            store_dir { "/versions/store/dir" }
+            process { |_, filename| ["modified_content", filename] }
+          end
+        end
+      }
+
+      it do
+        do_test
+      end
+    end
+  end
 end

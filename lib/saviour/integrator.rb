@@ -11,7 +11,7 @@ module Saviour
     end
 
     def attach_file_hook(klass, attach_as, uploader_klass)
-      versions = uploader_klass.versions || []
+      versions = uploader_klass.versions.keys
 
       ([nil] + versions).each do |version|
         column_name = Saviour::AttributeNameCalculator.new(attach_as, version).name
@@ -34,7 +34,7 @@ module Saviour
       @klass.define_singleton_method "attach_file" do |attach_as, uploader_klass|
         a.attach_file_hook(self, attach_as, uploader_klass)
 
-        versions = uploader_klass.versions || []
+        versions = uploader_klass.versions.keys
         b.attached_files[attach_as] ||= []
         b.attached_files[attach_as] += versions
 

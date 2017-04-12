@@ -463,7 +463,32 @@ end
 ```
 
 To improve reusability, validation blocks or methods will also receive a third argument (only if declared in your
-implementation). This third argument is a hash containing `attached_as` and `version` of the validating file.
+implementation). This third argument is a hash containing `attached_as` and `version` of the validating file. You can use
+this to implement conditional validations depending on the attached file or its versions.
+
+Validations will be executed on every different file you assign to an attachment. For example, if you have an uploader
+with 1 declared versions and you assign only to the main file, then the validations will be executed only once and
+after that the file will be assigned to the versions, processed and saved. If instead you assign 2 different files, to
+the version + to the main file, then the validations will be executed 2 times. 
+
+```
+post = Post.find(123)
+post.image = File.open("my_file.jpg")
+post.save # => Triggers validations only once
+
+# ---
+
+post = Post.find(123)
+post.image = File.open("my_file.jpg")
+post.image(:thumb).assign File.open("my_file_thumb.jpg")
+post.save # => Triggers validations twice
+
+# ---
+
+post = Post.find(123)
+post.image(:thumb).assign File.open("my_file_thumb.jpg")
+post.save # => Triggers validations only once
+```
 
 
 ## Active Record Lifecycle integration
