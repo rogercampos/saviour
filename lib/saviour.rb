@@ -1,6 +1,3 @@
-require 'fileutils'
-require 'fog/aws'
-
 require 'saviour/version'
 require 'saviour/base_uploader'
 require 'saviour/file'
