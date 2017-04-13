@@ -16,8 +16,13 @@ module Saviour
       klass = @klass
       persistence_klass = @persistence_klass
 
-      @klass.define_singleton_method "attach_file" do |attach_as, uploader_klass, opts = {}|
+      @klass.define_singleton_method "attach_file" do |attach_as, *maybe_uploader_klass, **opts, &block|
         klass.attached_files.push(attach_as)
+        uploader_klass = maybe_uploader_klass[0]
+
+        if uploader_klass.nil? && block.nil?
+          raise ArgumentError, "you must provide either an UploaderClass or a block to define it."
+        end
 
         if opts[:follow]
           klass.attached_followers_per_leader[opts[:follow]] ||= []
@@ -27,6 +32,12 @@ module Saviour
         klass.class_eval do
           define_method(attach_as) do
             instance_variable_get("@__uploader_#{attach_as}") || begin
+
+              if block
+                uploader_klass = Class.new(Saviour::BaseUploader)
+                uploader_klass.class_eval(&block)
+              end
+
               new_file = ::Saviour::File.new(uploader_klass, self, attach_as)
 
               layer = persistence_klass.new(self)
