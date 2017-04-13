@@ -1,13 +1,9 @@
-require_relative 'uploader/element'
 require_relative 'uploader/store_dir_extractor'
 require_relative 'uploader/processors_runner'
 
 module Saviour
   class BaseUploader
-    attr_reader :version_name
-
     def initialize(opts = {})
-      @version_name = opts[:version]
       @data = opts.fetch(:data, {})
     end
 
@@ -28,7 +24,7 @@ module Saviour
       raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
 
       if Config.processing_enabled
-        contents, filename = Uploader::ProcessorsRunner.new(self, @version_name).run!(contents, filename)
+        contents, filename = Uploader::ProcessorsRunner.new(self).run!(contents, filename)
       end
 
       path = ::File.join(store_dir, filename)
@@ -45,17 +41,11 @@ module Saviour
         @processors ||= []
       end
 
-      def versions
-        @versions ||= []
-      end
-
       def process(name = nil, opts = {}, type = :memory, &block)
-        element = Uploader::Element.new(@current_version, name || block)
-
         if block_given?
-          processors.push(element: element, type: type)
+          processors.push(method_or_block: name || block, type: type)
         else
-          processors.push(element: element, type: type, opts: opts)
+          processors.push(method_or_block: name || block, type: type, opts: opts)
         end
       end
 
@@ -65,18 +55,7 @@ module Saviour
 
 
       def store_dir(name = nil, &block)
-        element = Uploader::Element.new(@current_version, name || block)
-        store_dirs.push(element)
-      end
-
-      def version(name, &block)
-        versions.push(name)
-
-        if block
-          @current_version = name
-          instance_eval(&block)
-          @current_version = nil
-        end
+        store_dirs.push(name || block)
       end
     end
   end

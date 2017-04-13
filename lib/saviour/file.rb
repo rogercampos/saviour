@@ -4,9 +4,8 @@ module Saviour
   class File
     attr_reader :persisted_path
 
-    def initialize(uploader_klass, model, attached_as, version = nil)
+    def initialize(uploader_klass, model, attached_as)
       @uploader_klass, @model, @attached_as = uploader_klass, model, attached_as
-      @version = version
       @source_was = @source = nil
     end
 
@@ -34,6 +33,9 @@ module Saviour
 
     def assign(object)
       raise(RuntimeError, "must respond to `read`") if object && !object.respond_to?(:read)
+
+      followers = @model.class.attached_followers_per_leader[@attached_as]
+      followers.each { |x| @model.send(x).assign(object) unless @model.send(x).changed? } if followers
 
       @source_data = nil
       @source = object
@@ -97,7 +99,7 @@ module Saviour
     private
 
     def uploader
-      @uploader ||= @uploader_klass.new(version: @version, data: {model: @model, attached_as: @attached_as})
+      @uploader ||= @uploader_klass.new(data: { model: @model, attached_as: @attached_as })
     end
   end
 end

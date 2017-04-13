@@ -15,8 +15,8 @@ module Saviour
     end
 
     def reload
-      self.class.attached_files.each do |attach_as, versions|
-        (versions + [nil]).each { |version| instance_variable_set("@__uploader_#{version}_#{attach_as}", nil) }
+      self.class.attached_files.each do |attach_as|
+        instance_variable_set("@__uploader_#{attach_as}", nil)
       end
       super
     end

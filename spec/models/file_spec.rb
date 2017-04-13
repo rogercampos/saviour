@@ -25,7 +25,11 @@ describe Saviour::File do
 
   let(:example_file) { double(read: "some file contents", path: "/my/path") }
 
-  let(:dummy_class) { Class.new }
+  let(:dummy_class) {
+    klass = Class.new
+    Saviour::Integrator.new(klass, Saviour::PersistenceLayer).setup!
+    klass
+  }
 
   describe "#assign" do
     it "returns the assigned object" do

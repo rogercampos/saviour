@@ -16,7 +16,7 @@ describe Saviour::BaseUploader do
 
     it do
       subject.process :hola
-      expect(subject.processors[0][:element].method_or_block).to eq :hola
+      expect(subject.processors[0][:method_or_block]).to eq :hola
       expect(subject.processors[0][:opts]).to eq({})
     end
 
@@ -24,76 +24,43 @@ describe Saviour::BaseUploader do
       subject.process :a
       subject.process :resize, width: 50
 
-      expect(subject.processors[0][:element].method_or_block).to eq :a
+      expect(subject.processors[0][:method_or_block]).to eq :a
       expect(subject.processors[0][:opts]).to eq({})
 
-      expect(subject.processors[1][:element].method_or_block).to eq :resize
+      expect(subject.processors[1][:method_or_block]).to eq :resize
       expect(subject.processors[1][:opts]).to eq({width: 50})
     end
 
     it do
       subject.process { 5 }
-      expect(subject.processors[0][:element].method_or_block).to respond_to :call
-      expect(subject.processors[0][:element].method_or_block.call).to eq 5
+      expect(subject.processors[0][:method_or_block]).to respond_to :call
+      expect(subject.processors[0][:method_or_block].call).to eq 5
     end
 
     it do
       subject.store_dir { "/my/dir" }
-      expect(subject.store_dirs[0].method_or_block.call).to eq "/my/dir"
+      expect(subject.store_dirs[0].call).to eq "/my/dir"
     end
 
     it do
       subject.store_dir :method_to_return_the_dir
-      expect(subject.store_dirs[0].method_or_block).to eq :method_to_return_the_dir
+      expect(subject.store_dirs[0]).to eq :method_to_return_the_dir
     end
 
     it "can use store_dir twice and last prevails" do
       subject.store_dir { "/my/dir" }
       subject.store_dir { "/my/dir/4" }
-      expect(subject.store_dirs[0].method_or_block.call).to eq "/my/dir"
-      expect(subject.store_dirs[1].method_or_block.call).to eq "/my/dir/4"
+      expect(subject.store_dirs[0].call).to eq "/my/dir"
+      expect(subject.store_dirs[1].call).to eq "/my/dir/4"
     end
 
     it "is not accessible from subclasses, works in isolation" do
       subject.process :hola
-      expect(subject.processors[0][:element].method_or_block).to eq :hola
+      expect(subject.processors[0][:method_or_block]).to eq :hola
       expect(subject.processors[0][:opts]).to eq({})
 
       subclass = Class.new(subject)
       expect(subclass.processors).to eq []
-    end
-
-    describe "version" do
-      it "stores as elements with the given version" do
-        subject.process :hola
-        subject.version(:thumb) do
-          process :resize_to_thumb
-        end
-
-        expect(subject.processors[0][:element].method_or_block).to eq :hola
-        expect(subject.processors[0][:element].version).to eq nil
-        expect(subject.processors[0][:opts]).to eq({})
-
-        expect(subject.processors[1][:element].method_or_block).to eq :resize_to_thumb
-        expect(subject.processors[1][:element].version).to eq :thumb
-        expect(subject.processors[1][:opts]).to eq({})
-      end
-
-      it "respects ordering" do
-        subject.process :hola
-        subject.version(:thumb) { process :resize_to_thumb }
-        subject.process :top_level
-        subject.version(:another) { process(:foo) }
-
-        expect(subject.processors[0][:element].method_or_block).to eq :hola
-        expect(subject.processors[0][:element].version).to eq nil
-        expect(subject.processors[1][:element].method_or_block).to eq :resize_to_thumb
-        expect(subject.processors[1][:element].version).to eq :thumb
-        expect(subject.processors[2][:element].method_or_block).to eq :top_level
-        expect(subject.processors[2][:element].version).to eq nil
-        expect(subject.processors[3][:element].method_or_block).to eq :foo
-        expect(subject.processors[3][:element].version).to eq :another
-      end
     end
   end
 
@@ -211,136 +178,6 @@ describe Saviour::BaseUploader do
       it "can access model from processors" do
         expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/Robert_8_output.png")
         subject.write("content", "output.png")
-      end
-    end
-  end
-
-  describe "version" do
-    subject { uploader.new(version: :thumb) }
-
-    describe "store_dir" do
-      context "is the last one defined for the given version" do
-        let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir { "/store/dir" }
-          version(:thumb) do
-            store_dir { "/thumb/store/dir" }
-          end
-          store_dir { "/store/dir/second" }
-        } }
-
-        it do
-          expect(Saviour::Uploader::StoreDirExtractor.new(subject).store_dir).to eq "/thumb/store/dir"
-        end
-      end
-
-      context "is the last one defined without version if not specified per version" do
-        let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir { "/store/dir" }
-          version(:thumb) { process(:whatever) }
-          store_dir { "/store/dir/second" }
-        } }
-
-        it do
-          expect(Saviour::Uploader::StoreDirExtractor.new(subject).store_dir).to eq "/store/dir/second"
-        end
-      end
-
-    end
-
-    describe "processing behaviour on write" do
-      context "fails if no store_dir defined for root version" do
-        let(:uploader) { Class.new(Saviour::BaseUploader) {
-          version(:thumb) { store_dir { "/store/dir" } }
-        } }
-
-        it do
-          a = uploader.new(data: {model: "model", attached_as: "attached_as"})
-          expect { a.write('1', '2') }.to raise_error(RuntimeError)
-        end
-      end
-
-      context "with only one version" do
-        let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir { "/store/dir" }
-
-          version(:thumb) do
-            store_dir { "/versions/store/dir" }
-            process { |contents, name| [contents, "2_#{name}"] }
-          end
-        } }
-
-        it do
-          a = uploader.new(version: :thumb)
-          expect(Saviour::Config.storage).to receive(:write).with("content", "/versions/store/dir/2_output.png")
-          a.write("content", "output.png")
-        end
-
-        it do
-          a = uploader.new
-          expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/output.png")
-          a.write("content", "output.png")
-        end
-      end
-
-      context "multiple definitions" do
-        let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir { "/store/dir" }
-          process { |contents, name| ["#{contents}_altered", name] }
-
-          version(:thumb) do
-            store_dir { "/versions/store/dir" }
-            process { |contents, name| [contents, "2_#{name}"] }
-          end
-        } }
-
-        it do
-          a = uploader.new(version: :thumb)
-          expect(Saviour::Config.storage).to receive(:write).with("content_altered", "/versions/store/dir/2_output.png")
-          a.write("content", "output.png")
-        end
-
-        it do
-          a = uploader.new
-          expect(Saviour::Config.storage).to receive(:write).with("content_altered", "/store/dir/output.png")
-          a.write("content", "output.png")
-        end
-      end
-
-      context "consecutive versions" do
-        let(:uploader) { Class.new(Saviour::BaseUploader) {
-          store_dir { "/store/dir" }
-          process { |contents, name| ["#{contents}_altered", name] }
-
-          version(:thumb) do
-            store_dir { "/versions/store/dir" }
-            process { |contents, name| ["thumb_#{contents}", "2_#{name}"] }
-          end
-
-          version(:thumb_2) do
-            store_dir { "/versions/store/dir" }
-            process { |contents, name| ["thumb_2_#{contents}", "3_#{name}"] }
-          end
-
-          process { |contents, name| ["last_transform_#{contents}", name] }
-        } }
-
-        it do
-          a = uploader.new
-          expect(Saviour::Config.storage).to receive(:write).with("last_transform_content_altered", "/store/dir/output.png")
-          a.write("content", "output.png")
-        end
-
-        it do
-          a = uploader.new(version: :thumb)
-          expect(Saviour::Config.storage).to receive(:write).with("last_transform_thumb_content_altered", "/versions/store/dir/2_output.png")
-          a.write("content", "output.png")
-        end
-
-        it do
-          a = uploader.new(version: :thumb_2)
-          expect(Saviour::Config.storage).to receive(:write).with("last_transform_thumb_2_content_altered", "/versions/store/dir/3_output.png")
-          a.write("content", "output.png")
-        end
       end
     end
   end
