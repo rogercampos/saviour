@@ -9,20 +9,28 @@ module Saviour
       @uri = wrap_uri_string(url)
     end
 
-    def read
-      with_retry(3) { resolve(@uri) }
+    def read(*args)
+      stringio.read(*args)
+    end
+
+    def rewind
+      stringio.rewind
     end
 
     def original_filename
       ::File.basename(@uri.path)
     end
 
-    def path
-      @uri.path
-    end
-
 
     private
+
+    def stringio
+      @stringio ||= StringIO.new(raw_data)
+    end
+
+    def raw_data
+      @raw_data ||= with_retry(3) { resolve(@uri) }
+    end
 
     def resolve(uri, max_redirects = MAX_REDIRECTS)
       raise RuntimeError, "Max number of allowed redirects reached (#{MAX_REDIRECTS}) when resolving #{uri}" if max_redirects == 0

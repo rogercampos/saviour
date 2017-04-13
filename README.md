@@ -270,12 +270,12 @@ to verify existence for every write.
 
 ## Source abstraction
 
-As mentioned before, you can use `File#assign` with any object that responds to `read`. This is already the case for `::File`,
+As mentioned before, you can use `File#assign` with any io like object that responds to `read` and `rewind`. This is already the case for `::File`,
 `Tempfile` or `IO`. Since a file requires also a filename, however, in those cases a random filename will be assigned
 (you can always set the filename using a processor later on).
 
 Additionally, if the object responds to `#original_filename` then that will be used as a filename instead of generating
-a random one.
+a random one, or, if the object responds to `#path` then `File.basename(path)` will be used as a name.
 
 You can create your own classes implementing this API to extend functionality. This library includes two of them: StringSource
 and UrlSource.

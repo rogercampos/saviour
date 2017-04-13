@@ -1,11 +1,16 @@
 module Saviour
   class StringSource
     def initialize(value, filename = nil)
-      @value, @filename = value, filename
+      @value = StringIO.new(value)
+      @filename = filename
     end
 
-    def read
-      @value
+    def read(*args)
+      @value.read(*args)
+    end
+
+    def rewind
+      @value.rewind
     end
 
     def original_filename

@@ -39,16 +39,14 @@ describe "Make one attachment follow another one" do
 
     it "does not override a previously assigned source" do
       a = klass.new
-      a.file_thumb = Saviour::StringSource.new("some contents without a filename", "cuca_thumb.xml")
+      a.file_thumb = StringIO.new("some contents without a filename")
       a.file = Saviour::StringSource.new("blabla", "cuca.xml")
       a.save!
 
       expect(a.file.filename).to eq "cuca.xml"
-      expect(a.file.read).to eq 'blabla'
-      expect(a.file.read.bytesize).to eq 6
-
-      expect(a.file_thumb.filename).to eq 'new_cuca_thumb.xml'
       expect(a.file_thumb.read).to eq "some contents without a filename"
+
+      expect(a.file.read.bytesize).to eq 6
       expect(a.file_thumb.read.bytesize).to eq 32
     end
   end

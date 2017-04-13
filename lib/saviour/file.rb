@@ -88,7 +88,10 @@ module Saviour
     end
 
     def source_data
-      @source_data ||= @source.read
+      @source_data ||= begin
+        @source.rewind
+        @source.read
+      end
     end
 
     def blank?
