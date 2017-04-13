@@ -20,24 +20,19 @@ module Saviour
         klass.attached_files.push(attach_as)
         uploader_klass = maybe_uploader_klass[0]
 
-        if uploader_klass.nil? && block.nil?
-          raise ArgumentError, "you must provide either an UploaderClass or a block to define it."
-        end
-
         if opts[:follow]
           klass.attached_followers_per_leader[opts[:follow]] ||= []
           klass.attached_followers_per_leader[opts[:follow]].push(attach_as)
         end
 
-        klass.class_eval do
+        if uploader_klass.nil? && block.nil?
+          raise ArgumentError, "you must provide either an UploaderClass or a block to define it."
+        end
+
+        mod = Module.new do
           define_method(attach_as) do
             instance_variable_get("@__uploader_#{attach_as}") || begin
-
-              if block
-                uploader_klass = Class.new(Saviour::BaseUploader)
-                uploader_klass.class_eval(&block)
-              end
-
+              uploader_klass = Class.new(Saviour::BaseUploader, &block) if block
               new_file = ::Saviour::File.new(uploader_klass, self, attach_as)
 
               layer = persistence_klass.new(self)
@@ -55,6 +50,8 @@ module Saviour
             send(attach_as).changed?
           end
         end
+
+        klass.include mod
       end
 
       @klass.class_attribute :__saviour_validations
