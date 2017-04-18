@@ -5,33 +5,17 @@ module Saviour
         @uploader = uploader
       end
 
-      def candidate_store_dirs
-        @candidate_store_dirs ||= @uploader.class.store_dirs
-      end
-
-      def versioned_store_dirs?
-        candidate_store_dirs.any? { |x| x.versioned? && x.version == @uploader.version_name }
-      end
-
-      def versioned_store_dir
-        candidate_store_dirs.select { |x| x.versioned? && x.version == @uploader.version_name }.last if versioned_store_dirs?
-      end
-
-      def non_versioned_store_dir
-        candidate_store_dirs.select { |x| !x.versioned? }.last
-      end
-
       def store_dir_handler
-        @store_dir_handler ||= versioned_store_dir || non_versioned_store_dir
+        @store_dir_handler ||= @uploader.class.store_dirs.last
       end
 
       def store_dir
         @store_dir ||= begin
           if store_dir_handler
-            if store_dir_handler.block?
-              @uploader.instance_eval(&store_dir_handler.method_or_block)
+            if store_dir_handler.respond_to?(:call)
+              @uploader.instance_eval(&store_dir_handler)
             else
-              @uploader.send(store_dir_handler.method_or_block)
+              @uploader.send(store_dir_handler)
             end
           end
         end

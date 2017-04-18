@@ -5,26 +5,26 @@ module Saviour
       attr_accessor :contents
       attr_accessor :filename
 
-      def initialize(uploader, version_name)
-        @uploader, @version_name = uploader, version_name
+      def initialize(uploader)
+        @uploader = uploader
       end
 
       def matching_processors
-        @uploader.class.processors.select { |processor| !processor[:element].versioned? || processor[:element].version == @version_name }
+        @uploader.class.processors
       end
 
       def file
         @file ||= Tempfile.new([SecureRandom.hex, ::File.extname(filename)]).tap { |x| x.binmode }
       end
 
-      def run_element(element, opts, data)
-        if element.block?
-          @uploader.instance_exec(data, filename, &element.method_or_block)
+      def run_method_or_block(method_or_block, opts, data)
+        if method_or_block.respond_to?(:call)
+          @uploader.instance_exec(data, filename, &method_or_block)
         else
           if opts.empty?
-            @uploader.send(element.method_or_block, data, filename)
+            @uploader.send(method_or_block, data, filename)
           else
-            @uploader.send(element.method_or_block, data, filename, opts)
+            @uploader.send(method_or_block, data, filename, opts)
           end
         end
       end
@@ -43,11 +43,11 @@ module Saviour
       end
 
       def run_processor(processor)
-        element = processor[:element]
+        method_or_block = processor[:method_or_block]
         opts = processor[:opts]
 
         if processor[:type] == :memory
-          result = run_element(element, opts, contents)
+          result = run_method_or_block(method_or_block, opts, contents)
 
           self.contents = result[0]
           self.filename = result[1]
@@ -55,7 +55,7 @@ module Saviour
         else
           file.rewind
 
-          result = run_element(element, opts, file)
+          result = run_method_or_block(method_or_block, opts, file)
 
           self.file = result[0]
           self.filename = result[1]

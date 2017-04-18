@@ -18,13 +18,6 @@ describe Saviour::UrlSource do
     end
   end
 
-  describe "#path" do
-    it "is extracted from te passed uri" do
-      a = Saviour::UrlSource.new("http://domain.com/path/file.jpg")
-      expect(a.path).to eq "/path/file.jpg"
-    end
-  end
-
   describe "#read" do
     it "fails if the uri cannot be accessed" do
       allow(Net::HTTP).to receive(:get_response).and_return(Net::HTTPNotFound)
