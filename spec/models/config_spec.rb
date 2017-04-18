@@ -28,7 +28,7 @@ describe Saviour::Config do
       end
 
       it "raises correct exception if the main thread is not yet configured" do
-        Thread.main["Saviour::Config"] = nil
+        Thread.main.thread_variable_set("Saviour::Config", nil)
 
         Thread.new {
           expect { Saviour::Config.storage.anything }.to raise_error(RuntimeError)
@@ -36,7 +36,7 @@ describe Saviour::Config do
       end
 
       it "forwards configuration to main thread if not configured" do
-        Thread.main["Saviour::Config"] = nil
+        Thread.main.thread_variable_set("Saviour::Config", nil)
 
         Thread.new {
           Saviour::Config.storage = 'config_set_on_thread_1'
@@ -54,6 +54,18 @@ describe Saviour::Config do
           expect(Saviour::Config.storage).to eq :foo
         end.join
         expect(Saviour::Config.storage).to eq 12
+      end
+
+      it "shares values per-fiber" do
+        Thread.new {
+          Saviour::Config.storage = "value_#{Thread.current.object_id}"
+
+          f = Fiber.new do
+            Saviour::Config.storage
+          end
+
+          expect(f.resume).to eq "value_#{Thread.current.object_id}"
+        }.join
       end
     end
   end

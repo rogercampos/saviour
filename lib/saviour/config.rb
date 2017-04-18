@@ -1,3 +1,5 @@
+require 'thread'
+
 module Saviour
   class Config
     class NotImplemented
@@ -6,29 +8,35 @@ module Saviour
       end
     end
 
+    @semaphore = Mutex.new
+
     class << self
       def processing_enabled
-        Thread.current["Saviour::Config"] ||= {}
-        Thread.current["Saviour::Config"][:processing_enabled] || true
+        Thread.current.thread_variable_set("Saviour::Config", {}) unless Thread.current.thread_variable_get("Saviour::Config")
+        Thread.current.thread_variable_get("Saviour::Config")[:processing_enabled] || true
       end
 
       def processing_enabled=(value)
-        Thread.current["Saviour::Config"] ||= {}
-        Thread.current["Saviour::Config"][:processing_enabled] = value
+        Thread.current.thread_variable_set("Saviour::Config", {}) unless Thread.current.thread_variable_get("Saviour::Config")
+        Thread.current.thread_variable_get("Saviour::Config")[:processing_enabled] = value
       end
 
       def storage
-        Thread.current["Saviour::Config"] ||= {}
-        Thread.current["Saviour::Config"][:storage] || (Thread.main["Saviour::Config"] && Thread.main["Saviour::Config"][:storage]) || NotImplemented.new
+        @semaphore.synchronize do
+          Thread.current.thread_variable_set("Saviour::Config", {}) unless Thread.current.thread_variable_get("Saviour::Config")
+          Thread.current.thread_variable_get("Saviour::Config")[:storage] || (Thread.main.thread_variable_get("Saviour::Config") && Thread.main.thread_variable_get("Saviour::Config")[:storage]) || NotImplemented.new
+        end
       end
 
       def storage=(value)
-        Thread.current["Saviour::Config"] ||= {}
-        Thread.current["Saviour::Config"][:storage] = value
+        @semaphore.synchronize do
+          Thread.current.thread_variable_set("Saviour::Config", {}) unless Thread.current.thread_variable_get("Saviour::Config")
+          Thread.current.thread_variable_get("Saviour::Config")[:storage] = value
 
-        if Thread.main["Saviour::Config"].nil?
-          Thread.main["Saviour::Config"] ||= {}
-          Thread.main["Saviour::Config"][:storage] = value
+          if Thread.main.thread_variable_get("Saviour::Config").nil?
+            Thread.main.thread_variable_set("Saviour::Config", {})
+            Thread.main.thread_variable_get("Saviour::Config")[:storage] = value
+          end
         end
       end
     end
