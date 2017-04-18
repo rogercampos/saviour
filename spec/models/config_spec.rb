@@ -27,6 +27,26 @@ describe Saviour::Config do
         Thread.new { expect(Saviour::Config.storage).to eq("chuck") }.join
       end
 
+      it "raises correct exception if the main thread is not yet configured" do
+        Thread.main["Saviour::Config"] = nil
+
+        Thread.new {
+          expect { Saviour::Config.storage.anything }.to raise_error(RuntimeError)
+        }.join
+      end
+
+      it "forwards configuration to main thread if not configured" do
+        Thread.main["Saviour::Config"] = nil
+
+        Thread.new {
+          Saviour::Config.storage = 'config_set_on_thread_1'
+
+          Thread.new {
+            expect(Saviour::Config.storage).to eq 'config_set_on_thread_1'
+          }.join
+        }.join
+      end
+
       it "allows per-thread values" do
         Saviour::Config.storage = 12
         Thread.new do

@@ -19,12 +19,17 @@ module Saviour
 
       def storage
         Thread.current["Saviour::Config"] ||= {}
-        Thread.current["Saviour::Config"][:storage] || Thread.main["Saviour::Config"][:storage] || NotImplemented.new
+        Thread.current["Saviour::Config"][:storage] || (Thread.main["Saviour::Config"] && Thread.main["Saviour::Config"][:storage]) || NotImplemented.new
       end
 
       def storage=(value)
         Thread.current["Saviour::Config"] ||= {}
         Thread.current["Saviour::Config"][:storage] = value
+
+        if Thread.main["Saviour::Config"].nil?
+          Thread.main["Saviour::Config"] ||= {}
+          Thread.main["Saviour::Config"][:storage] = value
+        end
       end
     end
   end
