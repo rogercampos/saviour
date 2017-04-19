@@ -1,4 +1,7 @@
-require 'fog/aws'
+begin
+  require 'fog/aws'
+rescue LoadError
+end
 
 module Saviour
   class S3Storage
