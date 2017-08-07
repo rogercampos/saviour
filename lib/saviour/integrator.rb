@@ -36,7 +36,7 @@ module Saviour
               new_file = ::Saviour::File.new(uploader_klass, self, attach_as)
 
               layer = persistence_klass.new(self)
-              new_file.set_path!(layer.read(attach_as)) if layer.persisted?
+              new_file.set_path!(layer.read(attach_as))
 
               instance_variable_set("@__uploader_#{attach_as}", new_file)
             end

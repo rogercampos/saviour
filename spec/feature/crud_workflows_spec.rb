@@ -140,4 +140,21 @@ describe "saving a new file" do
       end
     end
   end
+
+  describe "dupping" do
+    it "maintains file access" do
+      with_test_file("example.xml") do |example|
+        a = klass.create!
+        a.update_attributes(file: example)
+
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
+
+        b = a.dup
+        expect(b).to_not be_persisted
+
+        expect(b.file?).to be true
+        expect(b.file.url).to eq a.file.url
+      end
+    end
+  end
 end

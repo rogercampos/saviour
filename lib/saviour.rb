@@ -13,5 +13,7 @@ require 'saviour/life_cycle'
 require 'saviour/persistence_layer'
 require 'saviour/validator'
 
+require 'tempfile'
+
 module Saviour
 end

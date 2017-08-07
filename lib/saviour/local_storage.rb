@@ -9,7 +9,7 @@ module Saviour
     end
 
     def write(contents, path)
-      raise(RuntimeError, "The path you're trying to write already exists!") if @overwrite_protection && exists?(path)
+      raise(RuntimeError, "The path you're trying to write already exists! (#{path})") if @overwrite_protection && exists?(path)
 
       dir = ::File.dirname(real_path(path))
       FileUtils.mkdir_p(dir) unless ::File.directory?(dir)
