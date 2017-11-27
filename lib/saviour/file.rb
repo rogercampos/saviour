@@ -29,6 +29,23 @@ module Saviour
       persisted? && Config.storage.public_url(@persisted_path)
     end
 
+    def ==(another_file)
+      return false unless another_file.is_a?(Saviour::File)
+      return false unless another_file.persisted? == persisted?
+
+      if persisted?
+        another_file.persisted_path == persisted_path
+      else
+        another_file.instance_variable_get("@source") == @source
+      end
+    end
+
+    def clone
+      new_file = Saviour::File.new(@uploader_klass, @model, @attached_as)
+      new_file.set_path!(@persisted_path)
+      new_file
+    end
+
     alias_method :url, :public_url
 
     def assign(object)
@@ -39,6 +56,11 @@ module Saviour
 
       @source_data = nil
       @source = object
+
+      if changed? && @model.respond_to?("#{@attached_as}_will_change!")
+        @model.send "#{@attached_as}_will_change!"
+      end
+
       @persisted_path = nil if object
 
       object
