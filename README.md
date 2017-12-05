@@ -267,6 +267,30 @@ on a path that already exists. This behaviour in enabled by default, but you can
 argument when instantiating the storage: `overwrite_protection: false`. This feature requires an additional HEAD request
 to verify existence for every write.
 
+NOTE: Be aware that S3 has a limit of 1024 bytes for the keys (paths) used. Be sure to truncate to that maximum length
+if you're using an s3 storage, for example with a processor like this:
+
+```ruby
+  # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html
+  # Max 1024 bytes for keys in S3
+  def truncate_at_max_key_size(contents, filename)
+    # Left 20 bytes of margin (up to 1024) to have some room for a name
+    if store_dir.bytesize > 1004
+      raise "The store_dir used is already bigger than 1004 bytes, must be reduced!"
+    end
+
+    key = "#{store_dir}#{filename}"
+    new_filename = if key > 1024
+                     # note mb_chars is an active support's method
+                     filename.mb_chars.limit(1024 - store_dir.bytesize).to_s
+                   else
+                     filename
+                   end
+
+    [contents, new_filename]
+  end
+``` 
+
 
 ## Source abstraction
 
