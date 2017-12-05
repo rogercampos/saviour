@@ -20,7 +20,6 @@ module Saviour
     end
 
     def write(contents, filename)
-      store_dir = Uploader::StoreDirExtractor.new(self).store_dir
       raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
 
       if Config.processing_enabled
@@ -30,6 +29,10 @@ module Saviour
       path = ::File.join(store_dir, filename)
       Config.storage.write(contents, path)
       path
+    end
+
+    def store_dir
+      @store_dir ||= Uploader::StoreDirExtractor.new(self).store_dir
     end
 
     class << self

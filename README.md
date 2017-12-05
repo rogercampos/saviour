@@ -384,6 +384,8 @@ When using `process_with_file`, the last file instance you return from your last
 `process_with_file` will be automatically deleted by Saviour. Be aware of this if you return
 some File instance different than the one you received pointing to a file.
 
+From inside a process you can also access the current store dir with `store_dir`.
+
 Finally, processors can be disabled entirely via a configuration parameter. Example:
 
 ```
