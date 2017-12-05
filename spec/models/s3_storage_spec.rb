@@ -27,6 +27,11 @@ describe Saviour::S3Storage do
       end
     end
 
+    it "raises exception if key > 1024 bytes" do
+      key = "a" * 1025
+      expect { subject.write("contents", key) }.to raise_error.with_message(/The key in S3 must be at max 1024 bytes, this key is too big/)
+    end
+
     describe "overwritting" do
       context "without overwrite protection" do
         subject {

@@ -19,6 +19,12 @@ module Saviour
       raise(RuntimeError, "The path you're trying to write already exists!") if @overwrite_protection && exists?(path)
 
       path = sanitize_leading_slash(path)
+
+      # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html
+      if path.bytesize > 1024
+        raise(RuntimeError, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
+      end
+
       directory.files.create({
                                  key: path,
                                  body: contents,

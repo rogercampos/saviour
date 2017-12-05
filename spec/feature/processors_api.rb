@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "access to model data from uploaders" do
+describe "processor's API" do
   before { allow(Saviour::Config).to receive(:storage).and_return(Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com")) }
 
   let(:uploader) {
@@ -22,7 +22,7 @@ describe "access to model data from uploaders" do
     klass
   }
 
-  describe "file store" do
+  describe "can access to model and attached_as" do
     it do
       with_test_file("example.xml") do |example, name|
         a = klass.new
@@ -31,6 +31,27 @@ describe "access to model data from uploaders" do
 
         expect(Saviour::Config.storage.exists?(path)).to be_truthy
         expect(path).to eq "/store/dir/87/87-file-#{name}"
+      end
+    end
+  end
+
+  describe "can access store_dir" do
+    let(:uploader) {
+      Class.new(Saviour::BaseUploader) do
+        store_dir { "/store/dir/#{model.id}" }
+        process { |contents, name| ["FAKE: #{store_dir}", name] }
+      end
+    }
+
+    it do
+      with_test_file("example.xml") do |example, name|
+        a = klass.new
+        a.file = example
+        path = a.file.write
+
+        contents = Saviour::Config.storage.read(path)
+        expect(Saviour::Config.storage.exists?(path)).to be_truthy
+        expect(contents).to eq "FAKE: /store/dir/87"
       end
     end
   end
