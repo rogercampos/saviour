@@ -105,8 +105,11 @@ module Saviour
 
       path = uploader.write(source_data, filename_to_be_assigned)
       @source_was = @source
-      @persisted_path = path
-      path
+
+      if path
+        @persisted_path = path
+        path
+      end
     end
 
     def source_data

@@ -119,7 +119,7 @@ describe Saviour::File do
 
       uploader = double
       allow(file).to receive(:uploader).and_return(uploader)
-      expect(uploader).to receive(:write)
+      expect(uploader).to receive(:write).and_return("/some/path")
       file.write
 
       expect(file).not_to be_changed

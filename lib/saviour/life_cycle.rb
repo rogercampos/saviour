@@ -32,7 +32,7 @@ module Saviour
       Config.storage.delete(current_path) if current_path
 
       new_path = @model.send(column).write
-      persistence_layer.write(column, new_path) if persistence_layer
+      persistence_layer.write(column, new_path) if persistence_layer && new_path
     end
 
     def attached_files

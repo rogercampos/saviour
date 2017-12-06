@@ -22,13 +22,20 @@ module Saviour
     def write(contents, filename)
       raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
 
-      if Config.processing_enabled
-        contents, filename = Uploader::ProcessorsRunner.new(self).run!(contents, filename)
-      end
+      catch(:halt_process) do
+        if Config.processing_enabled
+          contents, filename = Uploader::ProcessorsRunner.new(self).run!(contents, filename)
+        end
 
-      path = ::File.join(store_dir, filename)
-      Config.storage.write(contents, path)
-      path
+        path = ::File.join(store_dir, filename)
+        Config.storage.write(contents, path)
+
+        path
+      end
+    end
+
+    def halt_process
+      throw(:halt_process)
     end
 
     def store_dir

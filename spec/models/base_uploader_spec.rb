@@ -28,7 +28,7 @@ describe Saviour::BaseUploader do
       expect(subject.processors[0][:opts]).to eq({})
 
       expect(subject.processors[1][:method_or_block]).to eq :resize
-      expect(subject.processors[1][:opts]).to eq({width: 50})
+      expect(subject.processors[1][:opts]).to eq({ width: 50 })
     end
 
     it do
@@ -66,23 +66,23 @@ describe Saviour::BaseUploader do
 
   describe "initialization with data" do
     it "can declare wathever" do
-      uploader = Class.new(Saviour::BaseUploader).new(data: {a: "2", data: "my file"})
+      uploader = Class.new(Saviour::BaseUploader).new(data: { a: "2", data: "my file" })
       expect(uploader).to respond_to :a
       expect(uploader).to respond_to :data
       expect(uploader.a).to eq "2"
     end
 
     it do
-      uploader = Class.new(Saviour::BaseUploader).new(data: {a: "2", data: "my file"})
+      uploader = Class.new(Saviour::BaseUploader).new(data: { a: "2", data: "my file" })
       expect(uploader).to respond_to :a
 
-      uploader = Class.new(Saviour::BaseUploader).new(data: {name: "johny"})
+      uploader = Class.new(Saviour::BaseUploader).new(data: { name: "johny" })
       expect(uploader).not_to respond_to :a
     end
   end
 
   describe "#write" do
-    subject { uploader.new(data: {model: "model", attached_as: "attached_as"}) }
+    subject { uploader.new(data: { model: "model", attached_as: "attached_as" }) }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) }
@@ -173,17 +173,29 @@ describe Saviour::BaseUploader do
       } }
 
       let(:model) { double(id: 8, name: "Robert") }
-      subject { uploader.new(data: {model: model, attached_as: "attached_as"}) }
+      subject { uploader.new(data: { model: model, attached_as: "attached_as" }) }
 
       it "can access model from processors" do
         expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/Robert_8_output.png")
         subject.write("content", "output.png")
       end
     end
+
+    describe "returns nil if halted" do
+      let(:uploader) { Class.new(Saviour::BaseUploader) {
+        store_dir { "/store/dir" }
+        process { halt_process }
+      } }
+
+      it do
+        expect(Saviour::Config.storage).to_not receive(:write)
+        expect(subject.write("contents", "file.jpg")).to be_nil
+      end
+    end
   end
 
   describe "#process_with_file" do
-    subject { uploader.new(data: {model: "model", attached_as: "attached_as"}) }
+    subject { uploader.new(data: { model: "model", attached_as: "attached_as" }) }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {

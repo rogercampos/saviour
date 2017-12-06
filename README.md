@@ -410,6 +410,20 @@ some File instance different than the one you received pointing to a file.
 
 From inside a process you can also access the current store dir with `store_dir`.
 
+From inside a process, you can also call `halt_process` to abort the current processing and upload of the file.
+This can be useful for example for an "image_thumb" attachment that can be generic. If you're able to generate a
+thumbnail image for the given file, then it works normally, otherwise halt:
+
+```ruby
+process_with_file do |file, filename|
+  if can_generate_thumbnail?(file) # Only if jpg, png or pdf file
+    create_thumbnail(file, filename)
+  else
+    halt_process
+  end
+end
+```
+
 Finally, processors can be disabled entirely via a configuration parameter. Example:
 
 ```
