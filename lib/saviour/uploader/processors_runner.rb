@@ -79,7 +79,7 @@ module Saviour
           self.contents = ::File.read(file)
         end
 
-        file.delete
+        file.close!
 
         [contents, filename]
       end

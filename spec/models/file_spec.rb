@@ -156,10 +156,9 @@ describe Saviour::File do
       allow(file).to receive(:read).and_return("some contents")
 
       mocked_tmpfile = double(binmode: "", rewind: "", flush: "", write: "")
-      allow(Tempfile).to receive(:open).and_yield(mocked_tmpfile)
+      allow(Tempfile).to receive(:new).and_return(mocked_tmpfile)
 
-      expect(mocked_tmpfile).to receive(:close)
-      expect(mocked_tmpfile).to receive(:delete)
+      expect(mocked_tmpfile).to receive(:close!)
 
       test_exception = Class.new(StandardError)
 

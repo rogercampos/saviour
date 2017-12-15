@@ -96,18 +96,17 @@ module Saviour
     def with_copy
       raise CannotCopy, "must be persisted" unless persisted?
 
-      Tempfile.open([::File.basename(filename, ".*"), ::File.extname(filename)]) do |file|
-        begin
-          file.binmode
-          file.write(read)
-          file.flush
-          file.rewind
+      temp_file = Tempfile.new([::File.basename(filename, ".*"), ::File.extname(filename)])
 
-          yield(file)
-        ensure
-          file.close
-          file.delete
-        end
+      begin
+        temp_file.binmode
+        temp_file.write(read)
+        temp_file.flush
+        temp_file.rewind
+
+        yield(temp_file)
+      ensure
+        temp_file.close!
       end
     end
 
