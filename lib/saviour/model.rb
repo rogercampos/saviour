@@ -7,7 +7,8 @@ module Saviour
         raise(NoActiveRecordDetected, "Error: ActiveRecord not detected in #{self}") unless self.ancestors.include?(ActiveRecord::Base)
 
         after_destroy { Saviour::LifeCycle.new(self, PersistenceLayer).delete! }
-        after_save { Saviour::LifeCycle.new(self, PersistenceLayer).save! }
+        after_update { Saviour::LifeCycle.new(self, PersistenceLayer).update! }
+        after_create { Saviour::LifeCycle.new(self, PersistenceLayer).create! }
         validate { Saviour::Validator.new(self).validate! }
       end
     end
@@ -17,6 +18,16 @@ module Saviour
         instance_variable_set("@__uploader_#{attach_as}", nil)
       end
       super
+    end
+
+    def dup
+      duped = super
+
+      self.class.attached_files.each do |attach_as|
+        duped.instance_variable_set("@__uploader_#{attach_as}", send(attach_as).dup)
+      end
+
+      duped
     end
   end
 end

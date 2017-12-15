@@ -67,7 +67,7 @@ describe Saviour::File do
         file.assign(double(read: "contents", original_filename: 'original.jpg', path: "/my/path/my_file.zip", rewind: nil))
         uploader = double
         allow(file).to receive(:uploader).and_return(uploader)
-        expect(uploader).to receive(:write).with("contents", "original.jpg")
+        expect(uploader).to receive(:_process).with("contents", "original.jpg")
         file.write
       end
 
@@ -76,7 +76,7 @@ describe Saviour::File do
         file.assign(double(read: "contents", path: "/my/path/my_file.zip", rewind: nil))
         uploader = double
         allow(file).to receive(:uploader).and_return(uploader)
-        expect(uploader).to receive(:write).with("contents", "my_file.zip")
+        expect(uploader).to receive(:_process).with("contents", "my_file.zip")
         file.write
       end
 
@@ -86,18 +86,18 @@ describe Saviour::File do
         allow(SecureRandom).to receive(:hex).and_return("stubbed-random")
         uploader = double
         allow(file).to receive(:uploader).and_return(uploader)
-        expect(uploader).to receive(:write).with("contents", "stubbed-random")
+        expect(uploader).to receive(:_process).with("contents", "stubbed-random")
         file.write
       end
     end
 
-    it "returns the path" do
+    it "returns the final contents and path" do
       object = dummy_class.new
       file = Saviour::File.new(uploader_klass, object, :file)
       file.assign(double(read: "contents", path: "/my/path/my_file.zip", rewind: nil))
       uploader = double
       allow(file).to receive(:uploader).and_return(uploader)
-      expect(uploader).to receive(:write).with("contents", "my_file.zip").and_return("/store/dir/my_file.zip")
+      expect(uploader).to receive(:_process).with("contents", "my_file.zip").and_return(['contents', "/store/dir/my_file.zip"])
       expect(file.write).to eq "/store/dir/my_file.zip"
     end
   end
@@ -119,7 +119,7 @@ describe Saviour::File do
 
       uploader = double
       allow(file).to receive(:uploader).and_return(uploader)
-      expect(uploader).to receive(:write).and_return("/some/path")
+      expect(uploader).to receive(:_process).and_return("/some/path")
       file.write
 
       expect(file).not_to be_changed

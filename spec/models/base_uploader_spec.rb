@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Saviour::BaseUploader do
   let(:mocked_storage) {
     Class.new {
-      def write(content, filename)
+      def _process(content, filename)
         # pass
       end
     }.new
@@ -81,14 +81,14 @@ describe Saviour::BaseUploader do
     end
   end
 
-  describe "#write" do
+  describe "#_process" do
     subject { uploader.new(data: { model: "model", attached_as: "attached_as" }) }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) }
 
       it "error if no store_dir" do
-        expect { subject.write("contents", "filename.jpg") }.to raise_error(Saviour::ConfigurationError)
+        expect { subject._process("contents", "filename.jpg") }.to raise_error(Saviour::ConfigurationError)
       end
     end
 
@@ -97,13 +97,8 @@ describe Saviour::BaseUploader do
         store_dir { "/store/dir" }
       } }
 
-      it "calls storage write" do
-        expect(Saviour::Config.storage).to receive(:write).with("contents", "/store/dir/file.jpg")
-        subject.write("contents", "file.jpg")
-      end
-
-      it "returns the fullpath" do
-        expect(subject.write("contents", "file.jpg")).to eq '/store/dir/file.jpg'
+      it "returns the final contents and fullpath" do
+        expect(subject._process("contents", "file.jpg")).to eq ["contents", '/store/dir/file.jpg']
       end
     end
 
@@ -120,8 +115,7 @@ describe Saviour::BaseUploader do
 
       it "calls the processors" do
         expect(subject).to receive(:resize).with("content", "output.png").and_call_original
-        expect(Saviour::Config.storage).to receive(:write).with("content-x2", "/store/dir/output.png")
-        subject.write("content", "output.png")
+        expect(subject._process("content", "output.png")).to eq ["content-x2", "/store/dir/output.png"]
       end
     end
 
@@ -138,8 +132,7 @@ describe Saviour::BaseUploader do
       } }
 
       it "respects ordering on processor calling" do
-        expect(Saviour::Config.storage).to receive(:write).with("content-x2_x9", "/store/dir/prefix-output.png")
-        subject.write("content", "output.png")
+        expect(subject._process("content", "output.png")).to eq ["content-x2_x9", "/store/dir/prefix-output.png"]
       end
     end
 
@@ -155,8 +148,7 @@ describe Saviour::BaseUploader do
       } }
 
       it "calls the method using the stored arguments" do
-        expect(Saviour::Config.storage).to receive(:write).with("content-50-10", "/store/dir/output.png")
-        subject.write("content", "output.png")
+        expect(subject._process("content", "output.png")).to eq ["content-50-10", "/store/dir/output.png"]
       end
     end
 
@@ -176,8 +168,7 @@ describe Saviour::BaseUploader do
       subject { uploader.new(data: { model: model, attached_as: "attached_as" }) }
 
       it "can access model from processors" do
-        expect(Saviour::Config.storage).to receive(:write).with("content", "/store/dir/Robert_8_output.png")
-        subject.write("content", "output.png")
+        expect(subject._process("content", "output.png")).to eq ["content", "/store/dir/Robert_8_output.png"]
       end
     end
 
@@ -188,8 +179,8 @@ describe Saviour::BaseUploader do
       } }
 
       it do
-        expect(Saviour::Config.storage).to_not receive(:write)
-        expect(subject.write("contents", "file.jpg")).to be_nil
+        expect(Saviour::Config.storage).to_not receive(:_process)
+        expect(subject._process("contents", "file.jpg")).to be_nil
       end
     end
   end
@@ -211,8 +202,7 @@ describe Saviour::BaseUploader do
 
       it "calls the processors" do
         expect(subject).to receive(:foo).with(an_instance_of(Tempfile), "output.png").and_call_original
-        expect(Saviour::Config.storage).to receive(:write).with("modified-contents", "/store/dir/output.png")
-        subject.write("contents", "output.png")
+        expect(subject._process("contents", "output.png")).to eq ["modified-contents", "/store/dir/output.png"]
       end
     end
 
@@ -237,8 +227,7 @@ describe Saviour::BaseUploader do
       } }
 
       it "can mix types of runs between file and contents" do
-        expect(Saviour::Config.storage).to receive(:write).with("pre-contents_first_run-modified-contents", "/store/dir/pre-aaa.png")
-        subject.write("contents", "aaa.png")
+        expect(subject._process("contents", "aaa.png")).to eq ["pre-contents_first_run-modified-contents", "/store/dir/pre-aaa.png"]
       end
     end
   end

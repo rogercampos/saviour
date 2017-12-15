@@ -12,15 +12,12 @@ module Saviour
       @bucket = conf.delete(:bucket)
       @public_url_prefix = conf.delete(:public_url_prefix)
       @conf = conf
-      @overwrite_protection = conf.delete(:overwrite_protection) { true }
       @create_options = conf.delete(:create_options) { {} }
       conf.fetch(:aws_access_key_id) { raise(ArgumentError, "aws_access_key_id is required") }
       conf.fetch(:aws_secret_access_key) { raise(ArgumentError, "aws_secret_access_key is required") }
     end
 
     def write(contents, path)
-      raise(CannotOverwriteFile, "The path you're trying to write already exists!") if @overwrite_protection && exists?(path)
-
       path = sanitize_leading_slash(path)
 
       # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html
@@ -37,19 +34,26 @@ module Saviour
     end
 
     def read(path)
-      path = sanitize_leading_slash(path)
-      assert_exists(path)
-      directory.files.get(path).body
+      real_path = sanitize_leading_slash(path)
+
+      file = directory.files.get(real_path)
+      raise FileNotPresent, "Trying to read an unexisting path: #{path}" unless file
+
+      file.body
     end
 
     def delete(path)
-      path = sanitize_leading_slash(path)
-      assert_exists(path)
-      directory.files.get(path).destroy
+      real_path = sanitize_leading_slash(path)
+
+      file = directory.files.get(real_path)
+      raise FileNotPresent, "Trying to delete an unexisting path: #{path}" unless file
+
+      file.destroy
     end
 
     def exists?(path)
       path = sanitize_leading_slash(path)
+
       !!directory.files.head(path)
     end
 
@@ -60,6 +64,23 @@ module Saviour
       ::File.join(public_url_prefix, path)
     end
 
+    def cp(source_path, destination_path)
+      source_path = sanitize_leading_slash(source_path)
+      destination_path = sanitize_leading_slash(destination_path)
+
+      connection.copy_object(
+        @bucket, source_path,
+        @bucket, destination_path,
+        @create_options
+      )
+
+      FileUtils.cp(real_path(source_path), real_path(destination_path))
+    end
+
+    def mv(source_path, destination_path)
+      cp(source_path, destination_path)
+      delete(source_path)
+    end
 
     private
 
@@ -73,10 +94,6 @@ module Saviour
 
     def sanitize_leading_slash(path)
       path.gsub(/\A\/*/, '')
-    end
-
-    def assert_exists(path)
-      raise FileNotPresent, "File does not exists: #{path}" unless exists?(path)
     end
 
     def directory

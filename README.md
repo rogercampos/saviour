@@ -223,10 +223,6 @@ You can also assign a Proc instead of a String to dynamically manage this (for m
 
 This storage will take care of removing empty folders after removing files.
 
-This storage includes a feature of overwrite protection, raising an exception if an attempt is made of writing something
-on a path that already exists. This behaviour in enabled by default, but you can turn it off by passing an additional
-argument when instantiating the storage: `overwrite_protection: false`.
-
 
 ### S3Storage
 
@@ -261,11 +257,6 @@ Saviour::Config.storage = Saviour::S3Storage.new(
   create_options: {public: false, 'Cache-Control' => 'max-age=31536000'}
 )
 ```
-
-This storage includes a feature of overwrite protection, raising an exception if an attempt is made of writing something
-on a path that already exists. This behaviour in enabled by default, but you can turn it off by passing an additional
-argument when instantiating the storage: `overwrite_protection: false`. This feature requires an additional HEAD request
-to verify existence for every write.
 
 NOTE: Be aware that S3 has a limit of 1024 bytes for the keys (paths) used. Be sure to truncate to that maximum length
 if you're using an s3 storage, for example with a processor like this:
@@ -367,6 +358,12 @@ end
 
 Use `store_dir` to indicate the default directory under which the file will be stored. You can also use it under a
 `version` to change the default directory for that specific version.
+
+Note that it's very important that the full path to any attached file to any model is unique. This is typically
+accomplished by using `model.id` and `attached_as` as part of either the `store_dir` or the `filename`, in any
+combination you may want. If this is not satisfied, you may experience unexpected overwrite of files or files
+having unexpected contents, for example if two different models write to the same storage path, and then one
+of them is deleted.  
 
 
 ### Accessing model and attached_as

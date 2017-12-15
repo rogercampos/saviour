@@ -19,7 +19,7 @@ module Saviour
       @data.key?(name) || super
     end
 
-    def write(contents, filename)
+    def _process(contents, filename)
       raise ConfigurationError, "Please use `store_dir` in the uploader" unless store_dir
 
       catch(:halt_process) do
@@ -28,9 +28,8 @@ module Saviour
         end
 
         path = ::File.join(store_dir, filename)
-        Config.storage.write(contents, path)
 
-        path
+        [contents, path]
       end
     end
 

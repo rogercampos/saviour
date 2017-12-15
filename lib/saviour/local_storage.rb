@@ -7,12 +7,9 @@ module Saviour
     def initialize(opts = {})
       @local_prefix = opts[:local_prefix]
       @public_url_prefix = opts[:public_url_prefix]
-      @overwrite_protection = opts.fetch(:overwrite_protection, true)
     end
 
     def write(contents, path)
-      raise(CannotOverwriteFile, "The path you're trying to write already exists! (#{path})") if @overwrite_protection && exists?(path)
-
       dir = ::File.dirname(real_path(path))
       FileUtils.mkdir_p(dir) unless ::File.directory?(dir)
 
@@ -23,14 +20,16 @@ module Saviour
     end
 
     def read(path)
-      assert_exists(path)
       ::File.open(real_path(path)).read
+    rescue Errno::ENOENT
+      raise FileNotPresent, "Trying to read an unexisting path: #{path}"
     end
 
     def delete(path)
-      assert_exists(path)
       ::File.delete(real_path(path))
       ensure_removed_empty_dir(path)
+    rescue Errno::ENOENT
+      raise FileNotPresent, "Trying to delete an unexisting path: #{path}"
     end
 
     def exists?(path)
@@ -40,6 +39,18 @@ module Saviour
     def public_url(path)
       raise(MissingPublicUrlPrefix, "You must provide a `public_url_prefix`") unless public_url_prefix
       ::File.join(public_url_prefix, path)
+    end
+
+    def cp(source_path, destination_path)
+      FileUtils.cp(real_path(source_path), real_path(destination_path))
+    rescue Errno::ENOENT
+      raise FileNotPresent, "Trying to cp an unexisting path: #{source_path}"
+    end
+
+    def mv(source_path, destination_path)
+      FileUtils.mv(real_path(source_path), real_path(destination_path))
+    rescue Errno::ENOENT
+      raise FileNotPresent, "Trying to mv an unexisting path: #{source_path}"
     end
 
 
@@ -55,10 +66,6 @@ module Saviour
 
     def real_path(path)
       @local_prefix ? ::File.join(@local_prefix, path) : path
-    end
-
-    def assert_exists(path)
-      raise(FileNotPresent, "File does not exists: #{path}") unless ::File.file?(real_path(path))
     end
 
     def ensure_removed_empty_dir(path)

@@ -32,42 +32,17 @@ describe Saviour::S3Storage do
       expect { subject.write("contents", key) }.to raise_error.with_message(/The key in S3 must be at max 1024 bytes, this key is too big/)
     end
 
-    describe "overwritting" do
-      context "without overwrite protection" do
-        subject {
-          Saviour::S3Storage.new(
-              bucket: "fake-bucket",
-              aws_access_key_id: "stub",
-              aws_secret_access_key: "stub",
-              public_url_prefix: "https://fake-bucket.s3.amazonaws.com",
-              overwrite_protection: false
-          )
-        }
+    it "overwrites the existing file" do
+      mocked_s3.write("some dummy contents", destination_path)
+      expect(mocked_s3.exists?(destination_path)).to be_truthy
 
-        it "overwrites the existing file" do
-          mocked_s3.write("some dummy contents", destination_path)
-          expect(mocked_s3.exists?(destination_path)).to be_truthy
-
-          with_test_file("camaloon.jpg") do |file, _|
-            contents = file.read
-            subject.write(contents, destination_path)
-            expect(mocked_s3.read(destination_path)).to eq contents
-          end
-        end
-      end
-
-      context "with overwrite protection" do
-        it "raises an exception" do
-          mocked_s3.write("some dummy contents", destination_path)
-          expect(mocked_s3.exists?(destination_path)).to be_truthy
-
-          with_test_file("camaloon.jpg") do |file, _|
-            contents = file.read
-            expect { subject.write(contents, destination_path) }.to raise_error(Saviour::CannotOverwriteFile)
-          end
-        end
+      with_test_file("camaloon.jpg") do |file, _|
+        contents = file.read
+        subject.write(contents, destination_path)
+        expect(mocked_s3.read(destination_path)).to eq contents
       end
     end
+
 
     it "ignores leading slash" do
       subject.write("trash contents", "/folder/file.out")
@@ -77,7 +52,7 @@ describe Saviour::S3Storage do
     end
 
     describe "fog create options" do
-      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: "https://fake-bucket.s3.amazonaws.com", create_options: {'Cache-Control' => 'max-age=31536000'}) }
+      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: "https://fake-bucket.s3.amazonaws.com", create_options: { 'Cache-Control' => 'max-age=31536000' }) }
 
       it "uses passed options to create new files in S3" do
         with_test_file("camaloon.jpg") do |file, _|

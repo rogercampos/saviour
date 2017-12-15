@@ -139,22 +139,38 @@ describe "saving a new file" do
         end
       end
     end
+
+    it "does allow to update the same file to another contents in the same path" do
+      a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
+
+      a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+      expect(Saviour::Config.storage.read(a[:file])).to eq "foo"
+    end
   end
 
   describe "dupping" do
-    it "maintains file access" do
-      with_test_file("example.xml") do |example|
-        a = klass.create!
-        a.update_attributes(file: example)
+    let(:uploader) {
+      Class.new(Saviour::BaseUploader) {
+        store_dir { "/store/dir/#{model.id}" }
+      }
+    }
 
-        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
+    it "creates a non persisted file attachment" do
+      a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
+      expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
 
-        b = a.dup
-        expect(b).to_not be_persisted
+      b = a.dup
+      expect(b).to_not be_persisted
+      expect(b.file).to_not be_persisted
+    end
 
-        expect(b.file?).to be true
-        expect(b.file.url).to eq a.file.url
-      end
+    it "can be saved" do
+      a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
+      b = a.dup
+      b.save!
+
+      expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
+      expect(Saviour::Config.storage.read(a[:file])).to eq Saviour::Config.storage.read(b[:file])
     end
   end
 end

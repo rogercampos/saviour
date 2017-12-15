@@ -11,6 +11,7 @@ module Saviour
 
     def set_path!(path)
       @persisted_path = path
+      @persisted_path_before_last_save = path
     end
 
     def exists?
@@ -18,11 +19,11 @@ module Saviour
     end
 
     def read
-      persisted? && exists? && Config.storage.read(@persisted_path)
+      persisted? && Config.storage.read(@persisted_path)
     end
 
     def delete
-      persisted? && exists? && Config.storage.delete(@persisted_path)
+      persisted? && Config.storage.delete(@persisted_path)
     end
 
     def public_url
@@ -41,8 +42,22 @@ module Saviour
     end
 
     def clone
+      return nil unless persisted?
+
       new_file = Saviour::File.new(@uploader_klass, @model, @attached_as)
-      new_file.set_path!(@persisted_path)
+      new_file.set_path! @persisted_path
+      new_file
+    end
+
+    def dup
+      new_file = Saviour::File.new(@uploader_klass, @model, @attached_as)
+
+      if persisted?
+        new_file.assign(Saviour::StringSource.new(read, filename))
+      else
+        new_file.assign(Saviour::StringSource.new(source_data, filename_to_be_assigned))
+      end
+
       new_file
     end
 
@@ -100,14 +115,18 @@ module Saviour
       changed? ? (SourceFilenameExtractor.new(@source).detected_filename || SecureRandom.hex) : nil
     end
 
-    def write
+    def write(before_write: nil)
       raise(MissingSource, "You must provide a source to read from before trying to write") unless @source
 
-      path = uploader.write(source_data, filename_to_be_assigned)
+      contents, path = uploader._process(source_data, filename_to_be_assigned)
       @source_was = @source
 
       if path
+        before_write.call(path) if before_write
+
+        Config.storage.write(contents, path)
         @persisted_path = path
+        @persisted_path_before_last_save = path
         path
       end
     end
