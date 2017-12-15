@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Saviour::UrlSource do
   describe "initialization" do
     it "fails if no valid uri" do
-      expect { Saviour::UrlSource.new("%^7QQ#%%@#@@") }.to raise_error(ArgumentError).with_message(/is not a valid URI/)
+      expect { Saviour::UrlSource.new("%^7QQ#%%@#@@") }.to raise_error(Saviour::UrlSource::InvalidUrl).with_message(/is not a valid URI/)
     end
 
     it "does not fail if provided a valid uri" do
@@ -23,7 +23,7 @@ describe Saviour::UrlSource do
       allow(Net::HTTP).to receive(:get_response).and_return(Net::HTTPNotFound)
 
       a = Saviour::UrlSource.new("http://aboubaosdubioaubosdubaou.com/path/file.jpg")
-      expect { a.read }.to raise_error(RuntimeError).with_message(/failed after 3 attempts/)
+      expect { a.read }.to raise_error(Saviour::UrlSource::ConnectionFailed).with_message(/failed after 3 attempts/)
     end
 
     it "retries the request 3 times on error" do
@@ -54,7 +54,7 @@ describe Saviour::UrlSource do
       expect(response).to receive(:[]).with("location").exactly(10).times.and_return("http://example.org")
       expect(Net::HTTP).to receive(:get_response).exactly(10).times.and_return(response)
 
-      expect { Saviour::UrlSource.new("http://faked.blabla").read }.to raise_error(RuntimeError).with_message(/Max number of allowed redirects reached \(10\) when resolving/)
+      expect { Saviour::UrlSource.new("http://faked.blabla").read }.to raise_error(Saviour::UrlSource::TooManyRedirects).with_message(/Max number of allowed redirects reached \(10\) when resolving/)
     end
 
     it "fails if the redirected location is not a valid URI" do
@@ -63,7 +63,7 @@ describe Saviour::UrlSource do
 
       expect(Net::HTTP).to receive(:get_response).and_return(response)
 
-      expect { Saviour::UrlSource.new("http://faked.blabla").read }.to raise_error(ArgumentError).with_message(/is not a valid URI/)
+      expect { Saviour::UrlSource.new("http://faked.blabla").read }.to raise_error(Saviour::UrlSource::InvalidUrl).with_message(/is not a valid URI/)
     end
   end
 end

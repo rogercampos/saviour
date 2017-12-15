@@ -6,7 +6,7 @@ module Saviour
     end
 
     def setup!
-      raise "You cannot include Saviour twice in the same class" if @klass.respond_to?(:attached_files)
+      raise(ConfigurationError, "You cannot include Saviour::Model twice in the same class") if @klass.respond_to?(:attached_files)
 
       @klass.class_attribute :attached_files
       @klass.attached_files = []
@@ -26,7 +26,7 @@ module Saviour
         end
 
         if uploader_klass.nil? && block.nil?
-          raise ArgumentError, "you must provide either an UploaderClass or a block to define it."
+          raise ConfigurationError, "you must provide either an UploaderClass or a block to define it."
         end
 
         mod = Module.new do

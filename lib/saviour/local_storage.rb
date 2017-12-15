@@ -2,6 +2,8 @@ require 'fileutils'
 
 module Saviour
   class LocalStorage
+    MissingPublicUrlPrefix = Class.new(StandardError)
+
     def initialize(opts = {})
       @local_prefix = opts[:local_prefix]
       @public_url_prefix = opts[:public_url_prefix]
@@ -9,7 +11,7 @@ module Saviour
     end
 
     def write(contents, path)
-      raise(RuntimeError, "The path you're trying to write already exists! (#{path})") if @overwrite_protection && exists?(path)
+      raise(CannotOverwriteFile, "The path you're trying to write already exists! (#{path})") if @overwrite_protection && exists?(path)
 
       dir = ::File.dirname(real_path(path))
       FileUtils.mkdir_p(dir) unless ::File.directory?(dir)
@@ -36,7 +38,7 @@ module Saviour
     end
 
     def public_url(path)
-      raise(RuntimeError, "You must provide a `public_url_prefix`") unless public_url_prefix
+      raise(MissingPublicUrlPrefix, "You must provide a `public_url_prefix`") unless public_url_prefix
       ::File.join(public_url_prefix, path)
     end
 
@@ -56,7 +58,7 @@ module Saviour
     end
 
     def assert_exists(path)
-      raise(RuntimeError, "File does not exists: #{path}") unless ::File.file?(real_path(path))
+      raise(FileNotPresent, "File does not exists: #{path}") unless ::File.file?(real_path(path))
     end
 
     def ensure_removed_empty_dir(path)

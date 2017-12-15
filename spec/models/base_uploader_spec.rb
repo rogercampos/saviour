@@ -88,7 +88,7 @@ describe Saviour::BaseUploader do
       let(:uploader) { Class.new(Saviour::BaseUploader) }
 
       it "error if no store_dir" do
-        expect { subject.write("contents", "filename.jpg") }.to raise_error(RuntimeError)
+        expect { subject.write("contents", "filename.jpg") }.to raise_error(Saviour::ConfigurationError)
       end
     end
 

@@ -1,6 +1,4 @@
 module Saviour
-  NoActiveRecordDetected = Class.new(StandardError)
-
   module Model
     def self.included(klass)
       Integrator.new(klass, PersistenceLayer).setup!

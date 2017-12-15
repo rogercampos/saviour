@@ -5,24 +5,27 @@ end
 
 module Saviour
   class S3Storage
+    MissingPublicUrlPrefix = Class.new(StandardError)
+    KeyTooLarge = Class.new(StandardError)
+
     def initialize(conf = {})
       @bucket = conf.delete(:bucket)
       @public_url_prefix = conf.delete(:public_url_prefix)
       @conf = conf
       @overwrite_protection = conf.delete(:overwrite_protection) { true }
       @create_options = conf.delete(:create_options) { {} }
-      conf.fetch(:aws_access_key_id) { raise ArgumentError.new("aws_access_key_id is required") }
-      conf.fetch(:aws_secret_access_key) { raise ArgumentError.new("aws_secret_access_key is required") }
+      conf.fetch(:aws_access_key_id) { raise(ArgumentError, "aws_access_key_id is required") }
+      conf.fetch(:aws_secret_access_key) { raise(ArgumentError, "aws_secret_access_key is required") }
     end
 
     def write(contents, path)
-      raise(RuntimeError, "The path you're trying to write already exists!") if @overwrite_protection && exists?(path)
+      raise(CannotOverwriteFile, "The path you're trying to write already exists!") if @overwrite_protection && exists?(path)
 
       path = sanitize_leading_slash(path)
 
       # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html
       if path.bytesize > 1024
-        raise(RuntimeError, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
+        raise(KeyTooLarge, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
       end
 
       directory.files.create({
@@ -51,7 +54,7 @@ module Saviour
     end
 
     def public_url(path)
-      raise(RuntimeError, "You must provide a `public_url_prefix`") unless public_url_prefix
+      raise(MissingPublicUrlPrefix, "You must provide a `public_url_prefix`") unless public_url_prefix
 
       path = sanitize_leading_slash(path)
       ::File.join(public_url_prefix, path)
@@ -73,7 +76,7 @@ module Saviour
     end
 
     def assert_exists(path)
-      raise RuntimeError, "File does not exists: #{path}" unless exists?(path)
+      raise FileNotPresent, "File does not exists: #{path}" unless exists?(path)
     end
 
     def directory

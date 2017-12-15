@@ -4,7 +4,7 @@ module Saviour
   class Config
     class NotImplemented
       def method_missing(*)
-        raise(RuntimeError, "You need to provide a storage! Set Saviour::Config.storage = xxx")
+        raise(ConfigurationError, "You need to provide a storage! Set Saviour::Config.storage = xxx")
       end
     end
 

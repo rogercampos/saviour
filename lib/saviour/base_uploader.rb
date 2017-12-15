@@ -20,7 +20,7 @@ module Saviour
     end
 
     def write(contents, filename)
-      raise RuntimeError, "Please use `store_dir` before trying to write" unless store_dir
+      raise ConfigurationError, "Please use `store_dir` in the uploader" unless store_dir
 
       catch(:halt_process) do
         if Config.processing_enabled
