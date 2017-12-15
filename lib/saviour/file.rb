@@ -49,7 +49,7 @@ module Saviour
     alias_method :url, :public_url
 
     def assign(object)
-      raise(RuntimeError, "must respond to `read`") if object && !object.respond_to?(:read)
+      raise(SourceError, "given object to #assign or #<attach_as>= must respond to `read`") if object && !object.respond_to?(:read)
 
       followers = @model.class.attached_followers_per_leader[@attached_as]
       followers.each { |x| @model.send(x).assign(object) unless @model.send(x).changed? } if followers
@@ -79,7 +79,7 @@ module Saviour
     end
 
     def with_copy
-      raise "must be persisted" unless persisted?
+      raise CannotCopy, "must be persisted" unless persisted?
 
       Tempfile.open([::File.basename(filename, ".*"), ::File.extname(filename)]) do |file|
         begin
@@ -101,7 +101,7 @@ module Saviour
     end
 
     def write
-      raise(RuntimeError, "You must provide a source to read from first") unless @source
+      raise(MissingSource, "You must provide a source to read from before trying to write") unless @source
 
       path = uploader.write(source_data, filename_to_be_assigned)
       @source_was = @source

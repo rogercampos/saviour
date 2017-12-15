@@ -1,14 +1,14 @@
 module Saviour
   class Validator
     def initialize(model)
-      raise "Please provide an object compatible with Saviour." unless model.class.respond_to?(:attached_files)
+      raise(ConfigurationError, "Please provide an object compatible with Saviour.") unless model.class.respond_to?(:attached_files)
 
       @model = model
     end
 
     def validate!
       validations.each do |column, method_or_blocks|
-        raise(ArgumentError, "There is no attachment defined as '#{column}'") unless attached_files.include?(column)
+        raise(ConfigurationError, "There is no attachment defined as '#{column}'") unless attached_files.include?(column)
         if @model.send(column).changed?
           method_or_blocks.each { |method_or_block| run_validation(column, method_or_block) }
         end

@@ -63,7 +63,7 @@ describe Saviour::S3Storage do
 
           with_test_file("camaloon.jpg") do |file, _|
             contents = file.read
-            expect { subject.write(contents, destination_path) }.to raise_error(RuntimeError)
+            expect { subject.write(contents, destination_path) }.to raise_error(Saviour::CannotOverwriteFile)
           end
         end
       end
@@ -103,7 +103,7 @@ describe Saviour::S3Storage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.read("nope.rar") }.to raise_error(RuntimeError)
+      expect { subject.read("nope.rar") }.to raise_error(Saviour::FileNotPresent)
     end
   end
 
@@ -122,7 +122,7 @@ describe Saviour::S3Storage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.delete("nope.rar") }.to raise_error(RuntimeError)
+      expect { subject.delete("nope.rar") }.to raise_error(Saviour::FileNotPresent)
     end
   end
 
@@ -152,7 +152,7 @@ describe Saviour::S3Storage do
         with_test_file("camaloon.jpg") do |file, _|
           contents = file.read
           mocked_s3.write(contents, destination_path)
-          expect { subject.public_url(destination_path) }.to raise_error(RuntimeError)
+          expect { subject.public_url(destination_path) }.to raise_error(Saviour::S3Storage::MissingPublicUrlPrefix)
         end
       end
     end

@@ -3,6 +3,10 @@ require 'net/http'
 
 module Saviour
   class UrlSource
+    TooManyRedirects = Class.new(StandardError)
+    InvalidUrl = Class.new(StandardError)
+    ConnectionFailed = Class.new(StandardError)
+
     MAX_REDIRECTS = 10
 
     def initialize(url)
@@ -33,7 +37,7 @@ module Saviour
     end
 
     def resolve(uri, max_redirects = MAX_REDIRECTS)
-      raise RuntimeError, "Max number of allowed redirects reached (#{MAX_REDIRECTS}) when resolving #{uri}" if max_redirects == 0
+      raise TooManyRedirects, "Max number of allowed redirects reached (#{MAX_REDIRECTS}) when resolving #{uri}" if max_redirects == 0
 
       response = Net::HTTP.get_response(uri)
 
@@ -51,12 +55,12 @@ module Saviour
       begin
         URI(url)
       rescue URI::InvalidURIError
-        raise ArgumentError, "'#{url}' is not a valid URI"
+        raise InvalidUrl, "'#{url}' is not a valid URI"
       end
     end
 
     def with_retry(n = 3, &block)
-      raise(RuntimeError, "Connection to #{@uri} failed after 3 attempts.") if n == 0
+      raise(ConnectionFailed, "Connection to #{@uri} failed after 3 attempts.") if n == 0
 
       block.call || with_retry(n - 1, &block)
     end

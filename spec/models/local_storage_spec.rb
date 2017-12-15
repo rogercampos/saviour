@@ -32,7 +32,7 @@ describe Saviour::LocalStorage do
 
           with_test_file("camaloon.jpg") do |file, _|
             contents = file.read
-            expect { subject.write(contents, destination_path) }.to raise_error(RuntimeError)
+            expect { subject.write(contents, destination_path) }.to raise_error(Saviour::CannotOverwriteFile)
           end
         end
       end
@@ -67,7 +67,7 @@ describe Saviour::LocalStorage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.read("nope.rar") }.to raise_error(RuntimeError)
+      expect { subject.read("nope.rar") }.to raise_error(Saviour::FileNotPresent)
     end
   end
 
@@ -82,7 +82,7 @@ describe Saviour::LocalStorage do
     end
 
     it "fails if the file do not exists" do
-      expect { subject.delete("nope.rar") }.to raise_error(RuntimeError)
+      expect { subject.delete("nope.rar") }.to raise_error(Saviour::FileNotPresent)
     end
 
     it "does not leave an empty dir behind" do
@@ -124,7 +124,7 @@ describe Saviour::LocalStorage do
         with_test_file("camaloon.jpg") do |file, _|
           expect {
             subject.public_url(File.basename(file.path))
-          }.to raise_error(RuntimeError)
+          }.to raise_error(Saviour::LocalStorage::MissingPublicUrlPrefix)
         end
       end
     end

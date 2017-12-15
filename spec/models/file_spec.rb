@@ -51,14 +51,14 @@ describe Saviour::File do
 
     it "shows error if assigned object do not respond to :read" do
       file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      expect { file.assign(6) }.to raise_error(RuntimeError)
+      expect { file.assign(6) }.to raise_error(Saviour::SourceError)
     end
   end
 
   describe "#write" do
     it "fails without source" do
       file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      expect { file.write }.to raise_error(RuntimeError)
+      expect { file.write }.to raise_error(Saviour::MissingSource)
     end
 
     describe "filename used" do

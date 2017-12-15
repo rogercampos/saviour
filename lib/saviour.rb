@@ -16,4 +16,11 @@ require 'saviour/validator'
 require 'tempfile'
 
 module Saviour
+  NoActiveRecordDetected = Class.new(StandardError)
+  CannotOverwriteFile = Class.new(StandardError)
+  FileNotPresent = Class.new(StandardError)
+  ConfigurationError = Class.new(StandardError)
+  SourceError = Class.new(StandardError)
+  CannotCopy = Class.new(StandardError)
+  MissingSource = Class.new(StandardError)
 end

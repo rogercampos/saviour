@@ -3,7 +3,7 @@ require 'spec_helper'
 describe Saviour::Config do
   describe "#storage" do
     it do
-      expect { Saviour::Config.storage.anything }.to raise_error(RuntimeError)
+      expect { Saviour::Config.storage.anything }.to raise_error(Saviour::ConfigurationError)
     end
 
     it do
@@ -31,7 +31,7 @@ describe Saviour::Config do
         Thread.main.thread_variable_set("Saviour::Config", nil)
 
         Thread.new {
-          expect { Saviour::Config.storage.anything }.to raise_error(RuntimeError)
+          expect { Saviour::Config.storage.anything }.to raise_error(Saviour::ConfigurationError)
         }.join
       end
 
