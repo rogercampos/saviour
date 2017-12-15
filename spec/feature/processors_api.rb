@@ -5,8 +5,8 @@ describe "processor's API" do
 
   let(:uploader) {
     Class.new(Saviour::BaseUploader) do
-      store_dir { "/store/dir/#{model.id}" }
-      process { |contents, name| [contents, "#{model.id}-#{attached_as}-#{name}"] }
+      store_dir { "/store/dir/#{model.value}" }
+      process { |contents, name| [contents, "#{model.value}-#{attached_as}-#{name}"] }
     end
   }
 
@@ -14,7 +14,7 @@ describe "processor's API" do
     klass = Class.new(Test) {
       include Saviour::Model
 
-      def id
+      def value
         87
       end
     }
@@ -38,7 +38,7 @@ describe "processor's API" do
   describe "can access store_dir" do
     let(:uploader) {
       Class.new(Saviour::BaseUploader) do
-        store_dir { "/store/dir/#{model.id}" }
+        store_dir { "/store/dir/#{model.value}" }
         process { |contents, name| ["FAKE: #{store_dir}", name] }
       end
     }
@@ -52,6 +52,23 @@ describe "processor's API" do
         contents = Saviour::Config.storage.read(path)
         expect(Saviour::Config.storage.exists?(path)).to be_truthy
         expect(contents).to eq "FAKE: /store/dir/87"
+      end
+    end
+  end
+
+  describe "can access id on the model (after_create)" do
+    let(:uploader) {
+      Class.new(Saviour::BaseUploader) do
+        store_dir { "/store/dir/#{model.id}" }
+      end
+    }
+
+    it do
+      with_test_file("example.xml") do |example, name|
+        a = klass.create! file: example
+
+        expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
+        expect(a[:file]).to eq "/store/dir/#{a.id}/#{name}"
       end
     end
   end

@@ -12,12 +12,12 @@ require 'saviour/source_filename_extractor'
 require 'saviour/life_cycle'
 require 'saviour/persistence_layer'
 require 'saviour/validator'
+require 'saviour/db_helpers'
 
 require 'tempfile'
 
 module Saviour
   NoActiveRecordDetected = Class.new(StandardError)
-  CannotOverwriteFile = Class.new(StandardError)
   FileNotPresent = Class.new(StandardError)
   ConfigurationError = Class.new(StandardError)
   SourceError = Class.new(StandardError)

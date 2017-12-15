@@ -43,6 +43,9 @@ RSpec.configure do |config|
     }
   end
 
+  config.before do
+    Test.delete_all
+  end
   config.after { Fog::Mock.reset }
 end
 
