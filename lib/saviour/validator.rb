@@ -7,10 +7,20 @@ module Saviour
     end
 
     def validate!
-      validations.each do |column, method_or_blocks|
+      validations.each do |column, declared_validations|
         raise(ConfigurationError, "There is no attachment defined as '#{column}'") unless attached_files.include?(column)
         if @model.send(column).changed?
-          method_or_blocks.each { |method_or_block| run_validation(column, method_or_block) }
+          declared_validations.each do |data|
+            type = data[:type]
+            method_or_block = data[:method_or_block]
+
+            case type
+              when :memory
+                run_validation(column, method_or_block)
+              when :file
+                run_validation_as_file(column, method_or_block)
+            end
+          end
         end
       end
     end
@@ -33,6 +43,26 @@ module Saviour
           @model.send(method_or_block, data, filename)
         else
           @model.send(method_or_block, data, filename, opts)
+        end
+      end
+    end
+
+    def run_validation_as_file(column, method_or_block)
+      file = @model.send(column).source
+      filename = @model.send(column).filename_to_be_assigned
+      opts = { attached_as: column }
+
+      if method_or_block.respond_to?(:call)
+        if method_or_block.arity == 2
+          @model.instance_exec(file, filename, &method_or_block)
+        else
+          @model.instance_exec(file, filename, opts, &method_or_block)
+        end
+      else
+        if @model.method(method_or_block).arity == 2
+          @model.send(method_or_block, file, filename)
+        else
+          @model.send(method_or_block, file, filename, opts)
         end
       end
     end

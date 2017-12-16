@@ -5,6 +5,7 @@ require 'bundler/setup'
 require 'rspec'
 require 'active_record'
 require 'sqlite3'
+require 'get_process_mem'
 
 require File.expand_path("../../lib/saviour", __FILE__)
 

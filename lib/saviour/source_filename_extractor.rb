@@ -5,7 +5,12 @@ module Saviour
     end
 
     def detected_filename
-      original_filename || path_filename
+      filename || original_filename || path_filename
+    end
+
+    def filename
+      value = @source.filename if @source.respond_to?(:filename)
+      value if !value.nil? && value != ''
     end
 
     def original_filename

@@ -39,7 +39,7 @@ describe "processor's API" do
     let(:uploader) {
       Class.new(Saviour::BaseUploader) do
         store_dir { "/store/dir/#{model.value}" }
-        process { |contents, name| ["FAKE: #{store_dir}", name] }
+        process { |_, name| ["FAKE: #{store_dir}", name] }
       end
     }
 
