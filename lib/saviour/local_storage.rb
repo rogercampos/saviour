@@ -10,13 +10,22 @@ module Saviour
     end
 
     def write(contents, path)
-      dir = ::File.dirname(real_path(path))
-      FileUtils.mkdir_p(dir) unless ::File.directory?(dir)
+      ensure_dir!(path)
 
       ::File.open(real_path(path), "w") do |f|
         f.binmode
         f.write(contents)
       end
+    end
+
+    def write_from_file(file, path)
+      ensure_dir!(path)
+
+      FileUtils.cp file.path, real_path(path)
+    end
+
+    def read_to_file(path, dest_file)
+      FileUtils.cp real_path(path), dest_file.path
     end
 
     def read(path)
@@ -55,6 +64,11 @@ module Saviour
 
 
     private
+
+    def ensure_dir!(path)
+      dir = ::File.dirname(real_path(path))
+      FileUtils.mkdir_p(dir) unless ::File.directory?(dir)
+    end
 
     def public_url_prefix
       if @public_url_prefix.respond_to?(:call)

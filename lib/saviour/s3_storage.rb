@@ -33,6 +33,15 @@ module Saviour
       )
     end
 
+    def write_from_file(file, path)
+      write(file, path)
+    end
+
+    def read_to_file(path, dest_file)
+      dest_file.rewind
+      dest_file.write(read(path))
+    end
+
     def read(path)
       real_path = sanitize_leading_slash(path)
 

@@ -19,7 +19,7 @@ module Saviour
       @data.key?(name) || super
     end
 
-    def _process(contents, filename)
+    def _process_as_contents(contents, filename)
       raise ConfigurationError, "Please use `store_dir` in the uploader" unless store_dir
 
       catch(:halt_process) do
@@ -30,6 +30,20 @@ module Saviour
         path = ::File.join(store_dir, filename)
 
         [contents, path]
+      end
+    end
+
+    def _process_as_file(file, filename)
+      raise ConfigurationError, "Please use `store_dir` in the uploader" unless store_dir
+
+      catch(:halt_process) do
+        if Config.processing_enabled
+          file, filename = Uploader::ProcessorsRunner.new(self).run_as_file!(file, filename)
+        end
+
+        path = ::File.join(store_dir, filename)
+
+        [file, path]
       end
     end
 

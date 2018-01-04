@@ -150,4 +150,23 @@ describe "validations saving a new file" do
       expect(a.errors[:file][0]).to eq "Received error in file"
     end
   end
+
+  describe "validations with file" do
+    it "fails reading the contents" do
+      klass = Class.new(base_klass) do
+        attach_validation_with_file :file, :check_contents
+
+        def check_contents(file, _, opts)
+          errors.add(:file, "Error!") if ::File.read(file.path) == "X"
+        end
+      end
+
+      Tempfile.open("") do |f|
+        f.write("X")
+        f.flush
+        a = klass.new file: f
+        expect(a).not_to be_valid
+      end
+    end
+  end
 end

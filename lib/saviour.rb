@@ -15,6 +15,7 @@ require 'saviour/validator'
 require 'saviour/db_helpers'
 
 require 'tempfile'
+require 'fileutils'
 
 module Saviour
   NoActiveRecordDetected = Class.new(StandardError)

@@ -35,6 +35,8 @@ module Saviour
             self.contents = ::File.read(file)
           else
             file.rewind
+            file.truncate(0)
+            file.binmode
             file.write(contents)
             file.flush
             file.rewind
@@ -75,13 +77,38 @@ module Saviour
         end
 
         if previous_type == :file
-          file.rewind
           self.contents = ::File.read(file)
         end
 
-        file.delete
+        file.close!
 
         [contents, filename]
+      end
+
+      def run_as_file!(start_file, initial_filename)
+        @file = start_file
+        @contents = nil
+        @filename = initial_filename
+
+        previous_type = :file
+
+        matching_processors.each do |processor|
+          advance!(processor, previous_type)
+
+          run_processor(processor)
+          previous_type = processor[:type]
+        end
+
+        if previous_type == :memory
+          file.rewind
+          file.truncate(0)
+          file.binmode
+          file.write(contents)
+          file.flush
+          file.rewind
+        end
+
+        [file, filename]
       end
     end
   end

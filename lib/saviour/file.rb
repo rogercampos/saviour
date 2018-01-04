@@ -3,6 +3,7 @@ require 'securerandom'
 module Saviour
   class File
     attr_reader :persisted_path
+    attr_reader :source
 
     def initialize(uploader_klass, model, attached_as)
       @uploader_klass, @model, @attached_as = uploader_klass, model, attached_as
@@ -37,7 +38,7 @@ module Saviour
       if persisted?
         another_file.persisted_path == persisted_path
       else
-        another_file.instance_variable_get("@source") == @source
+        another_file.source == @source
       end
     end
 
@@ -96,18 +97,14 @@ module Saviour
     def with_copy
       raise CannotCopy, "must be persisted" unless persisted?
 
-      Tempfile.open([::File.basename(filename, ".*"), ::File.extname(filename)]) do |file|
-        begin
-          file.binmode
-          file.write(read)
-          file.flush
-          file.rewind
+      temp_file = Tempfile.new([::File.basename(filename, ".*"), ::File.extname(filename)])
 
-          yield(file)
-        ensure
-          file.close
-          file.delete
-        end
+      begin
+        Config.storage.read_to_file(@persisted_path, temp_file)
+
+        yield(temp_file)
+      ensure
+        temp_file.close!
       end
     end
 
@@ -115,19 +112,53 @@ module Saviour
       changed? ? (SourceFilenameExtractor.new(@source).detected_filename || SecureRandom.hex) : nil
     end
 
+    def __maybe_with_tmpfile(source_type, file)
+      return yield if source_type == :stream
+
+      tmpfile = Tempfile.new([::File.basename(file.path, ".*"), ::File.extname(file.path)])
+      FileUtils.cp(file.path, tmpfile.path)
+
+      begin
+        yield(tmpfile)
+      ensure
+        tmpfile.close!
+      end
+    end
+
     def write(before_write: nil)
       raise(MissingSource, "You must provide a source to read from before trying to write") unless @source
 
-      contents, path = uploader._process(source_data, filename_to_be_assigned)
-      @source_was = @source
+      __maybe_with_tmpfile(source_type, @source) do |tmpfile|
+        contents, path = case source_type
+                           when :stream
+                             uploader._process_as_contents(source_data, filename_to_be_assigned)
+                           when :file
+                             uploader._process_as_file(tmpfile, filename_to_be_assigned)
+                         end
+        @source_was = @source
 
-      if path
-        before_write.call(path) if before_write
+        if path
+          before_write.call(path) if before_write
 
-        Config.storage.write(contents, path)
-        @persisted_path = path
-        @persisted_path_before_last_save = path
-        path
+          case source_type
+            when :stream
+              Config.storage.write(contents, path)
+            when :file
+              Config.storage.write_from_file(contents, path)
+          end
+
+          @persisted_path = path
+          @persisted_path_before_last_save = path
+          path
+        end
+      end
+    end
+
+    def source_type
+      if @source.respond_to?(:path)
+        :file
+      else
+        :stream
       end
     end
 
