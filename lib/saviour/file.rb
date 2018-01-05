@@ -145,6 +145,8 @@ module Saviour
               Config.storage.write(contents, path)
             when :file
               Config.storage.write_from_file(contents, path)
+              contents.close
+              ::File.delete(contents.path)
           end
 
           @persisted_path = path
