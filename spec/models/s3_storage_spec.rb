@@ -1,9 +1,23 @@
 require 'spec_helper'
 
 describe Saviour::S3Storage do
-  subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: "https://fake-bucket.s3.amazonaws.com") }
-  let!(:mocked_s3) { MockedS3Helper.new }
-  before { mocked_s3.start!(bucket_name: "fake-bucket") }
+  let(:injected_client) { Aws::S3::Client.new(stub_responses: true) }
+
+  let(:storage_options) {
+    {
+      bucket: "fake-bucket",
+      aws_access_key_id: "stub",
+      aws_secret_access_key: "stub",
+      region: "fake",
+      public_url_prefix: "https://fake-bucket.s3.amazonaws.com"
+    }
+  }
+
+  subject {
+    storage = Saviour::S3Storage.new(storage_options)
+    allow(storage).to receive(:client).and_return(injected_client)
+    storage
+  }
 
   context do
     it "fails when no keys are provided" do
@@ -18,12 +32,8 @@ describe Saviour::S3Storage do
 
     it "writting a new file" do
       with_test_file("camaloon.jpg") do |file, _|
-        expect(mocked_s3.exists?(destination_path)).to be_falsey
-
         contents = file.read
-        subject.write(contents, destination_path)
-
-        expect(mocked_s3.read(destination_path)).to eq contents
+        expect(subject.write(contents, destination_path)).to be_truthy
       end
     end
 
@@ -31,18 +41,6 @@ describe Saviour::S3Storage do
       key = "a" * 1025
       expect { subject.write("contents", key) }.to raise_error.with_message(/The key in S3 must be at max 1024 bytes, this key is too big/)
     end
-
-    it "overwrites the existing file" do
-      mocked_s3.write("some dummy contents", destination_path)
-      expect(mocked_s3.exists?(destination_path)).to be_truthy
-
-      with_test_file("camaloon.jpg") do |file, _|
-        contents = file.read
-        subject.write(contents, destination_path)
-        expect(mocked_s3.read(destination_path)).to eq contents
-      end
-    end
-
 
     it "ignores leading slash" do
       subject.write("trash contents", "/folder/file.out")
@@ -52,14 +50,21 @@ describe Saviour::S3Storage do
     end
 
     describe "fog create options" do
-      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: "https://fake-bucket.s3.amazonaws.com", create_options: { 'Cache-Control' => 'max-age=31536000' }) }
+      let(:storage_options) {
+        {
+          bucket: "fake-bucket",
+          aws_access_key_id: "stub",
+          aws_secret_access_key: "stub",
+          public_url_prefix: "https://fake-bucket.s3.amazonaws.com",
+          create_options: { cache_control: 'max-age=31536000', acl: "public-read" },
+          region: "fake"
+        }
+      }
 
       it "uses passed options to create new files in S3" do
         with_test_file("camaloon.jpg") do |file, _|
           contents = file.read
-          subject.write(contents, destination_path)
-          file_data = mocked_s3.head(destination_path)
-          expect(file_data.cache_control).to eq "max-age=31536000"
+          expect(subject.write(contents, destination_path)).to be_truthy
         end
       end
     end
@@ -69,15 +74,12 @@ describe Saviour::S3Storage do
     let(:destination_path) { "dest/file.jpeg" }
 
     it "reads an existing file" do
-      with_test_file("camaloon.jpg") do |file, _|
-        contents = file.read
-
-        mocked_s3.write(contents, destination_path)
-        expect(subject.read(destination_path)).to eq contents
-      end
+      injected_client.stub_responses(:get_object, body: "hello")
+      expect(subject.read(destination_path)).to eq "hello"
     end
 
     it "fails if the file do not exists" do
+      injected_client.stub_responses(:get_object, 'NotFound')
       expect { subject.read("nope.rar") }.to raise_error(Saviour::FileNotPresent)
     end
   end
@@ -86,18 +88,7 @@ describe Saviour::S3Storage do
     let(:destination_path) { "dest/file.jpeg" }
 
     it "deletes an existing file" do
-      with_test_file("camaloon.jpg") do |file, _|
-        contents = file.read
-        mocked_s3.write(contents, destination_path)
-
-        expect(mocked_s3.exists?(destination_path)).to be_truthy
-        subject.delete("/dest/file.jpeg")
-        expect(mocked_s3.exists?(destination_path)).to be_falsey
-      end
-    end
-
-    it "fails if the file do not exists" do
-      expect { subject.delete("nope.rar") }.to raise_error(Saviour::FileNotPresent)
+      expect(subject.delete(destination_path)).to be_truthy
     end
   end
 
@@ -105,14 +96,11 @@ describe Saviour::S3Storage do
     let(:destination_path) { "dest/file.jpeg" }
 
     it "with existing file" do
-      with_test_file("camaloon.jpg") do |file, _|
-        contents = file.read
-        mocked_s3.write(contents, destination_path)
-        expect(subject.exists?(destination_path)).to be_truthy
-      end
+      expect(subject.exists?(destination_path)).to be_truthy
     end
 
     it "with no file" do
+      injected_client.stub_responses(:head_object, 'NotFound')
       expect(subject.exists?("unexisting_file.zip")).to be_falsey
     end
   end
@@ -121,37 +109,40 @@ describe Saviour::S3Storage do
     let(:destination_path) { "dest/file.jpeg" }
 
     context do
-      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub") }
+      let(:storage_options) {
+        {
+          bucket: "fake-bucket",
+          aws_access_key_id: "stub",
+          aws_secret_access_key: "stub",
+          region: "fake"
+        }
+      }
 
       it "fails if not provided the prefix" do
-        with_test_file("camaloon.jpg") do |file, _|
-          contents = file.read
-          mocked_s3.write(contents, destination_path)
-          expect { subject.public_url(destination_path) }.to raise_error(Saviour::S3Storage::MissingPublicUrlPrefix)
-        end
+        expect { subject.public_url(destination_path) }.to raise_error(Saviour::S3Storage::MissingPublicUrlPrefix)
       end
     end
 
     context do
-      subject { Saviour::S3Storage.new(bucket: "fake-bucket", aws_access_key_id: "stub", aws_secret_access_key: "stub", public_url_prefix: -> { "https://#{Time.now.hour}.s3.amazonaws.com" }) }
+      let(:storage_options) {
+        {
+          bucket: "fake-bucket",
+          aws_access_key_id: "stub",
+          aws_secret_access_key: "stub",
+          public_url_prefix: -> { "https://#{Time.now.hour}.s3.amazonaws.com" },
+          region: "fake"
+        }
+      }
 
       it "allow to use a lambda for dynamic url prefixes" do
         allow(Time).to receive(:now).and_return(Time.new(2015, 1, 1, 13, 2, 1))
 
-        with_test_file("camaloon.jpg") do |file, _|
-          contents = file.read
-          mocked_s3.write(contents, destination_path)
-          expect(subject.public_url(destination_path)).to eq "https://13.s3.amazonaws.com/dest/file.jpeg"
-        end
+        expect(subject.public_url(destination_path)).to eq "https://13.s3.amazonaws.com/dest/file.jpeg"
       end
     end
 
     it do
-      with_test_file("camaloon.jpg") do |file, _|
-        contents = file.read
-        mocked_s3.write(contents, destination_path)
-        expect(subject.public_url(destination_path)).to eq "https://fake-bucket.s3.amazonaws.com/dest/file.jpeg"
-      end
+      expect(subject.public_url(destination_path)).to eq "https://fake-bucket.s3.amazonaws.com/dest/file.jpeg"
     end
   end
 end

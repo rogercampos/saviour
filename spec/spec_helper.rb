@@ -36,8 +36,6 @@ require 'support/models'
 
 RSpec.configure do |config|
   config.around do |example|
-    Fog.mock!
-
     Dir.mktmpdir { |dir|
       @tmpdir = dir
       example.run
@@ -47,7 +45,6 @@ RSpec.configure do |config|
   config.before do
     Test.delete_all
   end
-  config.after { Fog::Mock.reset }
 end
 
 def with_tempfile(ext = ".jpg")
@@ -66,47 +63,5 @@ def with_test_file(name)
     temp.rewind
 
     yield(temp, File.basename(temp.path))
-  end
-end
-
-class MockedS3Helper
-  attr_reader :directory
-
-  def start!(bucket_name: nil)
-    @directory = connection.directories.create(key: bucket_name)
-  end
-
-  def write(contents, path)
-    directory.files.create(
-        key: path,
-        body: contents,
-        public: true
-    )
-  end
-
-  def read(path)
-    directory.files.get(path).body
-  end
-
-  def delete(path)
-    directory.files.get(path).destroy
-  end
-
-  def head(path)
-    directory.files.head(path)
-  end
-
-  def exists?(path)
-    !!head(path)
-  end
-
-  def public_url(path)
-    directory.files.get(path).public_url
-  end
-
-  private
-
-  def connection
-    @connection ||= Fog::Storage.new(provider: 'AWS', aws_access_key_id: "stub", aws_secret_access_key: "stub")
   end
 end
