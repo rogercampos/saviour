@@ -23,7 +23,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rake"
   spec.add_development_dependency "sqlite3"
   spec.add_development_dependency "appraisal"
-  spec.add_development_dependency "fog-aws"
+  spec.add_development_dependency "aws-sdk-s3"
   spec.add_development_dependency "mime-types"
   spec.add_development_dependency "get_process_mem"
 end

@@ -1,5 +1,5 @@
 begin
-  require 'fog/aws'
+  require 'aws-sdk-s3'
 rescue LoadError
 end
 
@@ -15,9 +15,10 @@ module Saviour
       @create_options = conf.delete(:create_options) { {} }
       conf.fetch(:aws_access_key_id) { raise(ArgumentError, "aws_access_key_id is required") }
       conf.fetch(:aws_secret_access_key) { raise(ArgumentError, "aws_secret_access_key is required") }
+      @region = conf[:region] || raise(ArgumentError, "region is required")
     end
 
-    def write(contents, path)
+    def write(file_or_contents, path)
       path = sanitize_leading_slash(path)
 
       # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html
@@ -25,45 +26,48 @@ module Saviour
         raise(KeyTooLarge, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
       end
 
-      directory.files.create({
-                                 key: path,
-                                 body: contents,
-                                 public: true
-                             }.merge(@create_options)
-      )
+      client.put_object(@create_options.merge(body: file_or_contents, bucket: @bucket, key: path))
     end
 
     def write_from_file(file, path)
+      file.rewind
+
       write(file, path)
     end
 
     def read_to_file(path, dest_file)
+      dest_file.binmode
       dest_file.rewind
-      dest_file.write(read(path))
+      dest_file.truncate(0)
+
+      io = get_file_stringio(path)
+      while data = io.read(1024 * 1024)
+        dest_file.write(data)
+      end
+
+      dest_file.flush
     end
 
     def read(path)
-      real_path = sanitize_leading_slash(path)
-
-      file = directory.files.get(real_path)
-      raise FileNotPresent, "Trying to read an unexisting path: #{path}" unless file
-
-      file.body
+      get_file_stringio(path).read
     end
 
     def delete(path)
-      real_path = sanitize_leading_slash(path)
+      path = sanitize_leading_slash(path)
 
-      file = directory.files.get(real_path)
-      raise FileNotPresent, "Trying to delete an unexisting path: #{path}" unless file
-
-      file.destroy
+      client.delete_object(
+        bucket: @bucket,
+        key: path,
+      )
     end
 
     def exists?(path)
-      path = sanitize_leading_slash(path)
-
-      !!directory.files.head(path)
+      !!client.head_object(
+        bucket: @bucket,
+        key: path
+      )
+    rescue Aws::S3::Errors::NotFound
+      false
     end
 
     def public_url(path)
@@ -77,13 +81,15 @@ module Saviour
       source_path = sanitize_leading_slash(source_path)
       destination_path = sanitize_leading_slash(destination_path)
 
-      connection.copy_object(
-        @bucket, source_path,
-        @bucket, destination_path,
-        @create_options
+      client.copy_object(
+        @create_options.merge(
+          copy_source: "/#{@bucket}/#{source_path}",
+          bucket: @bucket,
+          key: destination_path
+        )
       )
-
-      FileUtils.cp(real_path(source_path), real_path(destination_path))
+    rescue Aws::S3::Errors::NoSuchKey
+      raise FileNotPresent, "Trying to cp an unexisting path: #{source_path}"
     end
 
     def mv(source_path, destination_path)
@@ -92,6 +98,15 @@ module Saviour
     end
 
     private
+
+    def get_file_stringio(path)
+      client.get_object(
+        bucket: @bucket,
+        key: path
+      ).body
+    rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchKey
+      raise FileNotPresent, "Trying to read an unexisting path: #{path}"
+    end
 
     def public_url_prefix
       if @public_url_prefix.respond_to?(:call)
@@ -105,12 +120,12 @@ module Saviour
       path.gsub(/\A\/*/, '')
     end
 
-    def directory
-      @directory ||= connection.directories.new(key: @bucket)
-    end
-
-    def connection
-      @connection ||= Fog::Storage.new({ provider: 'AWS' }.merge(@conf))
+    def client
+      @client ||= Aws::S3::Client.new(
+        access_key_id: @conf[:aws_access_key_id],
+        secret_access_key: @conf[:aws_secret_access_key],
+        region: @region
+      )
     end
   end
 end
