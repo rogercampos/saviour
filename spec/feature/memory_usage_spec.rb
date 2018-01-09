@@ -42,9 +42,9 @@ describe "memory usage" do
       Class.new(Saviour::BaseUploader) {
         store_dir { "/store/dir" }
 
-        process_with_file do |file, filename|
-          digest = Digest::MD5.file(file.path).hexdigest
-          [file, "#{digest}-#{filename}"]
+        process_with_path do |path, filename|
+          digest = Digest::MD5.file(path).hexdigest
+          [path, "#{digest}-#{filename}"]
         end
       }
     }

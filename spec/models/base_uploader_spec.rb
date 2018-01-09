@@ -175,23 +175,23 @@ describe Saviour::BaseUploader do
     end
   end
 
-  describe "#process_with_file" do
+  describe "#process_with_path" do
     subject { uploader.new(data: { model: "model", attached_as: "attached_as" }) }
 
     context do
       let(:uploader) { Class.new(Saviour::BaseUploader) {
         store_dir { "/store/dir" }
 
-        def foo(file, filename)
-          ::File.write(file.path, "modified-contents")
-          [file, filename]
+        def foo(path, filename)
+          ::File.write(path, "modified-contents")
+          [path, filename]
         end
 
-        process_with_file :foo
+        process_with_path :foo
       } }
 
       it "calls the processors" do
-        expect(subject).to receive(:foo).with(an_instance_of(Tempfile), "output.png").and_call_original
+        expect(subject).to receive(:foo).with(an_instance_of(String), "output.png").and_call_original
         expect(subject._process_as_contents("contents", "output.png")).to eq ["modified-contents", "/store/dir/output.png"]
       end
     end
@@ -204,9 +204,9 @@ describe Saviour::BaseUploader do
           ["#{contents}_first_run", filename]
         end
 
-        process_with_file do |file, filename|
-          ::File.write(file.path, "#{::File.read(file.path)}-modified-contents")
-          [file, filename]
+        process_with_path do |path, filename|
+          ::File.write(path, "#{::File.read(path)}-modified-contents")
+          [path, filename]
         end
 
         process :last_run

@@ -72,7 +72,7 @@ module Saviour
         end
       end
 
-      def process_with_file(name = nil, opts = {}, &block)
+      def process_with_path(name = nil, opts = {}, &block)
         process(name, opts, :file, &block)
       end
 

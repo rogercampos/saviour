@@ -6,14 +6,15 @@ describe "Original assigned file" do
   let(:uploader) {
     Class.new(Saviour::BaseUploader) do
       store_dir { "/store/dir/#{model.id}" }
-      process_with_file do |file, name|
-        ::File.delete(file.path)
+      process_with_path do |path, name|
+        ::File.delete(path)
 
         f = Tempfile.new("test")
         f.write("Hello")
         f.flush
+        f.close
 
-        [f, name]
+        [f.path, name]
       end
     end
   }

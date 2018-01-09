@@ -331,7 +331,7 @@ class ExampleUploader < Saviour::BaseUploader
 
   process :resize, width: 50, height: 50
 
-  process_with_file do |local_file, filename|
+  process_with_path do |local_file, filename|
     `mogrify -resize 40x40 #{local_file.path}`
     [local_file, filename]
   end
@@ -368,7 +368,7 @@ of them is deleted.
 
 ### Accessing model and attached_as
 
-Both `store_dir` and `process` / `process_with_file` declarations can be expressed passing a block or passing a symbol
+Both `store_dir` and `process` / `process_with_path` declarations can be expressed passing a block or passing a symbol
 representing a method. In both cases, you can directly access there a method called `model` and a method called
 `attached_as`, representing the original model and the name under which the file is attached to the model.
 
@@ -378,7 +378,7 @@ extracts information from the file and passes this info back to the model to sto
 ### Processors
 
 Processors are the methods (or blocks) that will modify either the file contents or the filename before actually
-upload the file into the storage. You can declare them via the `process` or the `process_with_file` method.
+upload the file into the storage. You can declare them via the `process` or the `process_with_path` method.
 
 They work as a stack, chaining the response from the previous one as input for the next one, and are executed in the
 same order you declare them. Each processor will receive the raw contents and the filename, and must return an array
@@ -393,16 +393,16 @@ As described in the example before, processors can be declared in two ways:
 
 By default processors work with the full raw contents of the file, and that's what you will get and must return when
 using the `process` method. However, since there are use cases for which is more convenient to have a File object
-instead of the raw contents, you can also use the `process_with_file` method, which will give you a Tempfile object,
+instead of the raw contents, you can also use the `process_with_path` method, which will give you a Tempfile object,
 and from which you must return a File object as well.
 
 You can combine both and Saviour will take care of synchronization, however take into account that every time you
 switch from one to another there will be a penalty for having to either read or write from/to disk.
-Internally Saviour works with raw contents, so even if you only use `process_with_file`, there will be a penalty at the
+Internally Saviour works with raw contents, so even if you only use `process_with_path`, there will be a penalty at the
 beginning and at the end, for writing and reading to and from a file.
 
-When using `process_with_file`, the last file instance you return from your last processor defined as
-`process_with_file` will be automatically deleted by Saviour. Be aware of this if you return
+When using `process_with_path`, the last file instance you return from your last processor defined as
+`process_with_path` will be automatically deleted by Saviour. Be aware of this if you return
 some File instance different than the one you received pointing to a file.
 
 From inside a process you can also access the current store dir with `store_dir`.
@@ -412,7 +412,7 @@ This can be useful for example for an "image_thumb" attachment that can be gener
 thumbnail image for the given file, then it works normally, otherwise halt:
 
 ```ruby
-process_with_file do |file, filename|
+process_with_path do |file, filename|
   if can_generate_thumbnail?(file) # Only if jpg, png or pdf file
     create_thumbnail(file, filename)
   else

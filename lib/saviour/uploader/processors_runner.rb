@@ -1,7 +1,7 @@
 module Saviour
   module Uploader
     class ProcessorsRunner
-      attr_writer :file
+      attr_writer :path
       attr_accessor :contents
       attr_accessor :filename
 
@@ -32,14 +32,13 @@ module Saviour
       def advance!(processor, previous_type)
         if processor[:type] != previous_type
           if processor[:type] == :memory
-            self.contents = ::File.read(file)
+            self.contents = ::File.read(@path)
           else
             file.rewind
             file.truncate(0)
-            file.binmode
             file.write(contents)
             file.flush
-            file.rewind
+            @path = file.path
           end
         end
       end
@@ -55,11 +54,9 @@ module Saviour
           self.filename = result[1]
 
         else
-          file.rewind
+          result = run_method_or_block(method_or_block, opts, @path)
 
-          result = run_method_or_block(method_or_block, opts, file)
-
-          self.file = result[0]
+          @path = result[0]
           self.filename = result[1]
         end
       end
@@ -77,17 +74,17 @@ module Saviour
         end
 
         if previous_type == :file
-          self.contents = ::File.read(file)
+          self.contents = ::File.read(@path)
         end
 
-        file.close!
+        file.close! if @file
 
         [contents, filename]
       end
 
       def run_as_file!(start_file, initial_filename)
-        @file = start_file
         @contents = nil
+        @path = start_file.path
         @filename = initial_filename
 
         previous_type = :file
@@ -100,15 +97,13 @@ module Saviour
         end
 
         if previous_type == :memory
-          file.rewind
-          file.truncate(0)
-          file.binmode
-          file.write(contents)
-          file.flush
-          file.rewind
+          ::File.write(start_file.path, contents)
+          @path = start_file.path
         end
 
-        [file, filename]
+        file.close! if @file
+
+        [::File.open(@path), filename]
       end
     end
   end
