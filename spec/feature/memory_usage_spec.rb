@@ -30,6 +30,13 @@ describe "memory usage" do
     end
   end
 
+  def with_no_gc
+    GC.disable
+    yield
+  ensure
+    GC.enable
+  end
+
   describe "is kept low when using exclusively with_file processors" do
     let(:uploader) {
       Class.new(Saviour::BaseUploader) {
@@ -46,12 +53,14 @@ describe "memory usage" do
       a = base_klass.create!
 
       with_tempfile do |f|
-        base_line = GetProcessMem.new.mb
+        with_no_gc do
+          base_line = GetProcessMem.new.mb
 
-        a.update_attributes! file: f
+          a.update_attributes! file: f
 
-        # Expect memory usage to grow below 10% of the file size
-        expect(GetProcessMem.new.mb - base_line).to be < size_to_test / 10
+          # Expect memory usage to grow below 10% of the file size
+          expect(GetProcessMem.new.mb - base_line).to be < size_to_test / 10
+        end
       end
     end
   end
@@ -72,12 +81,14 @@ describe "memory usage" do
       a = base_klass.create!
 
       with_tempfile do |f|
-        base_line = GetProcessMem.new.mb
+        with_no_gc do
+          base_line = GetProcessMem.new.mb
 
-        a.update_attributes! file: f
+          a.update_attributes! file: f
 
-        # Expect memory usage to grow at least the size of the file
-        expect(GetProcessMem.new.mb - base_line).to be > size_to_test
+          # Expect memory usage to grow at least the size of the file
+          expect(GetProcessMem.new.mb - base_line).to be > size_to_test
+        end
       end
     end
   end
