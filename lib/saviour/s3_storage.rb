@@ -62,6 +62,8 @@ module Saviour
     end
 
     def exists?(path)
+      path = sanitize_leading_slash(path)
+
       !!client.head_object(
         bucket: @bucket,
         key: path
@@ -100,6 +102,8 @@ module Saviour
     private
 
     def get_file_stringio(path)
+      path = sanitize_leading_slash(path)
+
       client.get_object(
         bucket: @bucket,
         key: path
