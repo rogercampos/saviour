@@ -7,21 +7,22 @@ module Saviour
     def initialize(opts = {})
       @local_prefix = opts[:local_prefix]
       @public_url_prefix = opts[:public_url_prefix]
+      @permissions = opts.fetch(:permissions, 0644)
     end
 
     def write(contents, path)
       ensure_dir!(path)
 
-      ::File.open(real_path(path), "w") do |f|
-        f.binmode
-        f.write(contents)
-      end
+      ::File.write real_path(path), contents, mode: "wb"
+
+      ensure_file_permissions!(path)
     end
 
     def write_from_file(file, path)
       ensure_dir!(path)
 
       FileUtils.cp file.path, real_path(path)
+      ensure_file_permissions!(path)
     end
 
     def read_to_file(path, dest_file)
@@ -64,6 +65,10 @@ module Saviour
 
 
     private
+
+    def ensure_file_permissions!(path)
+      ::File.chmod @permissions, real_path(path)
+    end
 
     def ensure_dir!(path)
       dir = ::File.dirname(real_path(path))

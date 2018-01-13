@@ -36,6 +36,28 @@ describe Saviour::LocalStorage do
         expect(File.read(path)).to eq contents
       end
     end
+
+    describe "permissions" do
+      it "are 0644 by default" do
+        file_destination = File.join(@tmpdir, destination_path)
+        subject.write "Some contents", destination_path
+        expect(File.file?(file_destination)).to be_truthy
+
+        expect(File.stat(file_destination).mode.to_s(8)).to match /0644$/
+      end
+
+      context do
+        subject { Saviour::LocalStorage.new(local_prefix: @tmpdir, permissions: 0600) }
+
+        it "can be changed by config" do
+          file_destination = File.join(@tmpdir, destination_path)
+          subject.write "Some contents", destination_path
+          expect(File.file?(file_destination)).to be_truthy
+
+          expect(File.stat(file_destination).mode.to_s(8)).to match /0600$/
+        end
+      end
+    end
   end
 
   describe "#read" do
