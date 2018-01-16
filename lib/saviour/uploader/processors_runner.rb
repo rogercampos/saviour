@@ -55,7 +55,7 @@ module Saviour
           self.filename = result[1]
 
         else
-          file.rewind
+          file.reopen(file.path)
 
           result = run_method_or_block(method_or_block, opts, file)
 
