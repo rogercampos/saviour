@@ -87,19 +87,27 @@ describe Saviour::LocalStorage do
     end
 
     it "does not leave an empty dir behind" do
-      with_test_file("camaloon.jpg") do |file, _|
-        final_path = File.join(@tmpdir, "some/folder/dest.jpg")
+      final_path = File.join(@tmpdir, "some/folder/dest.jpg")
+      subject.write "Some contents", "some/folder/dest.jpg"
+      expect(File.file?(final_path)).to be_truthy
 
-        FileUtils.mkdir_p(File.dirname(final_path))
-        FileUtils.cp file.path, final_path
-        expect(File.file?(final_path)).to be_truthy
+      subject.delete("/some/folder/dest.jpg")
 
-        subject.delete("/some/folder/dest.jpg")
+      expect(File.file?(final_path)).to be_falsey
+      expect(File.directory?(File.join(@tmpdir, "some/folder"))).to be_falsey
+      expect(File.directory?(File.join(@tmpdir, "some"))).to be_falsey
+    end
 
-        expect(File.file?(final_path)).to be_falsey
-        expect(File.directory?(File.join(@tmpdir, "some/folder"))).to be_falsey
-        expect(File.directory?(File.join(@tmpdir, "some"))).to be_falsey
-      end
+    it "does not leave an empty dir behind with relative paths" do
+      final_path = File.join @tmpdir, "some/folder/dest.jpg"
+      subject.write "Some contents", "some/folder/dest.jpg"
+      expect(File.file?(final_path)).to be_truthy
+
+      subject.delete("some/folder/dest.jpg")
+
+      expect(File.file?(final_path)).to be_falsey
+      expect(File.directory?(File.join(@tmpdir, "some/folder"))).to be_falsey
+      expect(File.directory?(File.join(@tmpdir, "some"))).to be_falsey
     end
   end
 
