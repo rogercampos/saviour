@@ -49,6 +49,20 @@ module Saviour
           define_method("#{attach_as}_changed?") do
             send(attach_as).changed?
           end
+
+          define_method("remove_#{attach_as}!") do
+            work = proc do
+              send(attach_as).delete
+              layer = persistence_klass.new(self)
+              layer.write(attach_as, nil)
+            end
+
+            if ActiveRecord::Base.connection.current_transaction.open?
+              DbHelpers.run_after_commit &work
+            else
+              work.call
+            end
+          end
         end
 
         klass.include mod

@@ -82,11 +82,7 @@ describe "saving a new file" do
       klass = Class.new(Test) do
         attr_accessor :fail_at_save
         before_save {
-          if ActiveRecord.version >= Gem::Version.new("5.0")
-            throw(:abort) if fail_at_save
-          else
-            !fail_at_save
-          end
+          throw(:abort) if fail_at_save
         }
         include Saviour::Model
       end

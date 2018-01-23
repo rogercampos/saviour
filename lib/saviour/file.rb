@@ -12,7 +12,6 @@ module Saviour
 
     def set_path!(path)
       @persisted_path = path
-      @persisted_path_before_last_save = path
     end
 
     def exists?
@@ -25,6 +24,9 @@ module Saviour
 
     def delete
       persisted? && Config.storage.delete(@persisted_path)
+      @persisted_path = nil
+      @source_was = nil
+      @source = nil
     end
 
     def public_url
@@ -148,7 +150,6 @@ module Saviour
           end
 
           @persisted_path = path
-          @persisted_path_before_last_save = path
           path
         end
       end
