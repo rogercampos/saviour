@@ -16,7 +16,7 @@ describe "reload model" do
         expect(a.file.exists?).to be_truthy
         expect(b.file.exists?).to be_falsey
 
-        b.reload
+        b.reload(lock: false)
         expect(b.file.exists?).to be_truthy
       end
     end

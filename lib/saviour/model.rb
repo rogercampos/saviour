@@ -13,7 +13,7 @@ module Saviour
       end
     end
 
-    def reload
+    def reload(*args)
       self.class.attached_files.each do |attach_as|
         instance_variable_set("@__uploader_#{attach_as}", nil)
       end
