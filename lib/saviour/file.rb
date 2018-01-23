@@ -19,7 +19,8 @@ module Saviour
     end
 
     def read
-      persisted? && Config.storage.read(@persisted_path)
+      return nil unless persisted?
+      Config.storage.read(@persisted_path)
     end
 
     def delete
@@ -30,7 +31,8 @@ module Saviour
     end
 
     def public_url
-      persisted? && Config.storage.public_url(@persisted_path)
+      return nil unless persisted?
+      Config.storage.public_url(@persisted_path)
     end
 
     def ==(another_file)

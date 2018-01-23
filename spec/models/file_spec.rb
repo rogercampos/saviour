@@ -204,4 +204,18 @@ describe Saviour::File do
       expect(a).to_not eq b
     end
   end
+
+  describe "#read" do
+    it "returns nil when there's no file persisted" do
+      a = Saviour::File.new(uploader_klass, dummy_class.new, :file)
+      expect(a.read).to be_nil
+    end
+  end
+
+  describe "#public_url" do
+    it "returns nil when there's no file persisted" do
+      a = Saviour::File.new(uploader_klass, dummy_class.new, :file)
+      expect(a.public_url).to be_nil
+    end
+  end
 end
