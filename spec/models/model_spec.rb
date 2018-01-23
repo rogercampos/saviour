@@ -9,21 +9,6 @@ describe Saviour do
     }.to raise_error(Saviour::NoActiveRecordDetected)
   end
 
-  describe ".attached_files" do
-    it "includes a mapping of the currently attached files" do
-      uploader = Class.new(Saviour::BaseUploader) do
-        store_dir { "/store/dir" }
-      end
-
-      klass = Class.new(Test) do
-        include Saviour::Model
-        attach_file :file, uploader
-      end
-
-      expect(klass.attached_files).to eq([:file])
-    end
-  end
-
   it "doens't mess with default File constant" do
     # Constant lookup in ruby works by lexical scope, so we can't create classes dynamically like above.
     expect(TestForSaviourFileResolution.new.foo).to be_falsey
