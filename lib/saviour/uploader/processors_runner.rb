@@ -55,11 +55,11 @@ module Saviour
           self.filename = result[1]
 
         else
-          file.reopen(file.path)
-
           result = run_method_or_block(method_or_block, opts, file)
 
           self.file = result[0]
+          file.reopen(file.path)
+
           self.filename = result[1]
         end
       end
