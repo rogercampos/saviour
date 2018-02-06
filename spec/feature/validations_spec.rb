@@ -168,5 +168,18 @@ describe "validations saving a new file" do
         expect(a).not_to be_valid
       end
     end
+
+    it "works when assigned source is not a file-like object" do
+      klass = Class.new(base_klass) do
+        attach_validation_with_file :file, :check_contents
+
+        def check_contents(file, _, opts)
+          errors.add(:file, "Error!") if ::File.read(file.path) == "X"
+        end
+      end
+
+      a = klass.new file: Saviour::StringSource.new("X", "filename.txt")
+      expect(a).not_to be_valid
+    end
   end
 end
