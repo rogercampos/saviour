@@ -12,6 +12,10 @@ module Saviour
       @model.update_columns(attr => value)
     end
 
+    def write_attrs(attributes)
+      @model.update_columns(attributes)
+    end
+
     def persisted?
       @model.persisted? || @model.destroyed?
     end
