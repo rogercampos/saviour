@@ -7,6 +7,8 @@ require 'active_record'
 require 'sqlite3'
 require 'get_process_mem'
 
+require 'support/active_record_asserts'
+
 require File.expand_path("../../lib/saviour", __FILE__)
 
 connection_opts = case ENV.fetch('DB', "sqlite")

@@ -142,6 +142,28 @@ describe "saving a new file" do
       a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
       expect(Saviour::Config.storage.read(a[:file])).to eq "foo"
     end
+
+    context do
+      let(:klass) {
+        a = Class.new(Test) { include Saviour::Model }
+        a.attach_file :file, uploader
+        a.attach_file :file_thumb, uploader
+        a
+      }
+
+      it "saves to db only once with multiple file attachments" do
+        a = klass.create!
+
+        # 2 update's, first empty and then 1 with the two attributes
+        expected_query = %Q{UPDATE "tests" SET "file" = '/store/dir/file.txt', "file_thumb" = '/store/dir/file.txt'}
+        expect_to_yield_queries(count: 2, including: [expected_query]) do
+          a.update_attributes!(
+            file: Saviour::StringSource.new("foo", "file.txt"),
+            file_thumb: Saviour::StringSource.new("foo", "file.txt")
+          )
+        end
+      end
+    end
   end
 
   describe "dupping" do
