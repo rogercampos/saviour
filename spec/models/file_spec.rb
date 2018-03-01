@@ -131,8 +131,7 @@ describe Saviour::File do
 
   describe "#filename" do
     it "returns the filename of the persisted file" do
-      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      file.set_path! "/mocked/path/file.rar"
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file, "/mocked/path/file.rar")
       expect(file.filename).to eq "file.rar"
     end
 
@@ -149,8 +148,7 @@ describe Saviour::File do
     end
 
     it "it's false when not yet assigned but persisted" do
-      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      file.set_path! "/path/dummy.jpg"
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file, "/path/dummy.jpg")
       expect(file).not_to be_blank
     end
 
@@ -161,16 +159,14 @@ describe Saviour::File do
     end
 
     it "it's false when persisted and assigned" do
-      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      file.set_path! "/path/dummy.jpg"
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file, "/path/dummy.jpg")
       expect(file).not_to be_blank
     end
   end
 
   describe "#clone" do
     it "returns a cloned instance pointing to the same stored file" do
-      file = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      file.set_path! "/path/dummy.jpg"
+      file = Saviour::File.new(uploader_klass, dummy_class.new, :file, "/path/dummy.jpg")
 
       new_file = file.clone
       expect(new_file.persisted_path).to eq "/path/dummy.jpg"
@@ -179,16 +175,10 @@ describe Saviour::File do
 
   describe "#==" do
     it "compares by object persisted path if persisted" do
-      a = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      a.set_path! "/path/dummy.jpg"
-
-      b = Saviour::File.new(uploader_klass, dummy_class.new, :file)
-      b.set_path! "/path/dummy.jpg"
+      a = Saviour::File.new(uploader_klass, dummy_class.new, :file, "/path/dummy.jpg")
+      b = Saviour::File.new(uploader_klass, dummy_class.new, :file, "/path/dummy.jpg")
 
       expect(a).to eq b
-
-      b.set_path! "/path/dummy2.jpg"
-      expect(a).to_not eq b
     end
 
     it "compares by content if not persisted" do

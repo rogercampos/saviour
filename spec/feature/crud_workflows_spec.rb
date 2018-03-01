@@ -143,6 +143,23 @@ describe "saving a new file" do
       expect(Saviour::Config.storage.read(a[:file])).to eq "foo"
     end
 
+    it "does not generate an extra query when saving the file with only attached changes" do
+      a = klass.create!
+
+      expect_to_yield_queries(count: 1) do
+        a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+      end
+    end
+
+    it "does generate an extra query when saving the file with an extra change" do
+      a = klass.create!
+
+      expect_to_yield_queries(count: 2) do
+        a.update_attributes! name: "Text",
+                             file: Saviour::StringSource.new("foo", "file.txt")
+      end
+    end
+
     context do
       let(:klass) {
         a = Class.new(Test) { include Saviour::Model }
@@ -154,9 +171,8 @@ describe "saving a new file" do
       it "saves to db only once with multiple file attachments" do
         a = klass.create!
 
-        # 2 update's, first empty and then 1 with the two attributes
         expected_query = %Q{UPDATE "tests" SET "file" = '/store/dir/file.txt', "file_thumb" = '/store/dir/file.txt'}
-        expect_to_yield_queries(count: 2, including: [expected_query]) do
+        expect_to_yield_queries(count: 1, including: [expected_query]) do
           a.update_attributes!(
             file: Saviour::StringSource.new("foo", "file.txt"),
             file_thumb: Saviour::StringSource.new("foo", "file.txt")
