@@ -5,6 +5,7 @@ module Saviour
   class BaseUploader
     def initialize(opts = {})
       @data = opts.fetch(:data, {})
+      @stash = {}
     end
 
     def method_missing(name, *args, &block)
@@ -51,6 +52,14 @@ module Saviour
       throw(:halt_process)
     end
 
+    def stash(hash)
+      @stash.merge!(hash)
+    end
+
+    def stashed
+      @stash
+    end
+
     def store_dir
       @store_dir ||= Uploader::StoreDirExtractor.new(self).store_dir
     end
@@ -76,9 +85,16 @@ module Saviour
         process(name, opts, :file, &block)
       end
 
-
       def store_dir(name = nil, &block)
         store_dirs.push(name || block)
+      end
+
+      def after_upload(&block)
+        after_upload_hooks.push(block)
+      end
+
+      def after_upload_hooks
+        @after_upload ||= []
       end
     end
   end

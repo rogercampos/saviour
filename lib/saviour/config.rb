@@ -39,6 +39,14 @@ module Saviour
           end
         end
       end
+
+      def concurrent_workers
+        @concurrent_workers || 4
+      end
+
+      def concurrent_workers=(x)
+        @concurrent_workers = x
+      end
     end
   end
 end
