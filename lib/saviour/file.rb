@@ -176,9 +176,6 @@ module Saviour
       !@source && !persisted?
     end
 
-
-    private
-
     def uploader
       @uploader ||= @uploader_klass.new(data: { model: @model, attached_as: @attached_as })
     end

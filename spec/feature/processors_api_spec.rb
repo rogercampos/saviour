@@ -72,4 +72,30 @@ describe "processor's API" do
       end
     end
   end
+
+  describe "errors raised from processors are propagated" do
+    let(:uploader) {
+      Class.new(Saviour::BaseUploader) do
+        store_dir { "/store/dir/#{model.id}" }
+
+        process do |contents, filename|
+          raise "custom problem!"
+        end
+      end
+    }
+
+    it "on update" do
+      a = klass.create!
+
+      expect {
+        a.update_attributes! file: Saviour::StringSource.new("contents", "filename.txt")
+      }.to raise_error.with_message("custom problem!")
+    end
+
+    it "on create" do
+      expect {
+        klass.create! file: Saviour::StringSource.new("contents", "filename.txt")
+      }.to raise_error.with_message("custom problem!")
+    end
+  end
 end

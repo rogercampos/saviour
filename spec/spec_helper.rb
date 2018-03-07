@@ -13,11 +13,11 @@ require File.expand_path("../../lib/saviour", __FILE__)
 
 connection_opts = case ENV.fetch('DB', "sqlite")
                     when "sqlite"
-                      {adapter: "sqlite3", database: ":memory:"}
+                      { adapter: "sqlite3", database: ":memory:" }
                     when "mysql"
-                      {adapter: "mysql2", database: "saviour", username: "root", encoding: "utf8"}
+                      { adapter: "mysql2", database: "saviour", username: "root", encoding: "utf8" }
                     when "postgres"
-                      {adapter: "postgresql", database: "saviour", username: "postgres"}
+                      { adapter: "postgresql", database: "saviour", username: "postgres" }
                   end
 
 ActiveRecord::Base.establish_connection(connection_opts)
@@ -46,6 +46,7 @@ RSpec.configure do |config|
 
   config.before do
     Test.delete_all
+    Saviour::Config.concurrent_workers = 4
   end
 end
 

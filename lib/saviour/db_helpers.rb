@@ -47,22 +47,22 @@ module Saviour
 
     class << self
 
-      def run_after_commit(&block)
-        unless ActiveRecord::Base.connection.current_transaction.open?
+      def run_after_commit(connection = ActiveRecord::Base.connection, &block)
+        unless connection.current_transaction.open?
           raise NotInTransaction, 'Trying to use `run_after_commit` but no transaction is currently open.'
         end
 
         dummy = CommitDummy.new(block)
-        ActiveRecord::Base.connection.add_transaction_record(dummy)
+        connection.add_transaction_record(dummy)
       end
 
-      def run_after_rollback(&block)
-        unless ActiveRecord::Base.connection.current_transaction.open?
+      def run_after_rollback(connection = ActiveRecord::Base.connection, &block)
+        unless connection.current_transaction.open?
           raise NotInTransaction, 'Trying to use `run_after_commit` but no transaction is currently open.'
         end
 
         dummy = RollbackDummy.new(block)
-        ActiveRecord::Base.connection.add_transaction_record(dummy)
+        connection.add_transaction_record(dummy)
       end
     end
   end

@@ -103,6 +103,26 @@ describe "saving a new file" do
         a.save
       end
     end
+
+    context do
+      let(:klass) {
+        a = Class.new(Test) { include Saviour::Model }
+        a.attach_file :file, uploader
+        a.attach_file :file_thumb, uploader
+        a
+      }
+
+      it "saves to db only once with multiple file attachments" do
+        # 1 create + 1 update with two attributes
+        expected_query = %Q{UPDATE "tests" SET "file" = '/store/dir/file.txt', "file_thumb" = '/store/dir/file.txt'}
+        expect_to_yield_queries(count: 2, including: [expected_query]) do
+          klass.create!(
+            file: Saviour::StringSource.new("foo", "file.txt"),
+            file_thumb: Saviour::StringSource.new("foo", "file.txt")
+          )
+        end
+      end
+    end
   end
 
   describe "deletion" do
