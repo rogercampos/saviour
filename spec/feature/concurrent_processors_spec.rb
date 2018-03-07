@@ -3,7 +3,8 @@ require 'spec_helper'
 describe "concurrent processors" do
   before { allow(Saviour::Config).to receive(:storage).and_return(Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com")) }
 
-  WAIT_TIME = 0.5
+  WAIT_TIME = 1
+  WITHIN_MARGIN = WAIT_TIME * 0.2 # 20% margin
 
   let(:uploader) {
     Class.new(Saviour::BaseUploader) {
@@ -39,7 +40,7 @@ describe "concurrent processors" do
                            file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       diff = Time.now - t0
-      expect(diff).to be_within(0.05).of(WAIT_TIME)
+      expect(diff).to be_within(WITHIN_MARGIN).of(WAIT_TIME)
       expect(diff).to be < WAIT_TIME * 4
     end
 
@@ -69,7 +70,7 @@ describe "concurrent processors" do
                            file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       diff = Time.now - t0
-      expect(diff).to be_within(0.05).of(WAIT_TIME * 2)
+      expect(diff).to be_within(WITHIN_MARGIN).of(WAIT_TIME * 2)
       expect(diff).to be < WAIT_TIME * 4
     end
   end
@@ -85,7 +86,7 @@ describe "concurrent processors" do
                     file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       diff = Time.now - t0
-      expect(diff).to be_within(0.05).of(WAIT_TIME)
+      expect(diff).to be_within(WITHIN_MARGIN).of(WAIT_TIME)
       expect(diff).to be < WAIT_TIME * 4
     end
 
@@ -111,7 +112,7 @@ describe "concurrent processors" do
                     file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       diff = Time.now - t0
-      expect(diff).to be_within(0.05).of(WAIT_TIME * 2)
+      expect(diff).to be_within(WITHIN_MARGIN).of(WAIT_TIME * 2)
       expect(diff).to be < WAIT_TIME * 4
     end
   end
