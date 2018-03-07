@@ -18,6 +18,8 @@ require 'tempfile'
 require 'fileutils'
 require 'concurrent/future'
 
+require 'active_support/dependencies'
+
 module Saviour
   NoActiveRecordDetected = Class.new(StandardError)
   FileNotPresent = Class.new(StandardError)

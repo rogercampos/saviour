@@ -115,16 +115,26 @@ module Saviour
       end.compact
 
       pool = Concurrent::FixedThreadPool.new(Saviour::Config.concurrent_workers)
-      futures = uploaders.map { |uploader| Concurrent::Future.execute(executor: pool) { uploader.upload } }
+      futures = uploaders.map { |uploader|
+        Concurrent::Future.execute(executor: pool) {
+          if defined?(Rails)
+            Rails.application.executor.wrap { uploader.upload }
+          else
+            uploader.upload
+          end
+        }
+      }
+
+      result = ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
+        futures.map do |x|
+          x.value.tap do
+            raise(x.reason) if x.rejected?
+          end
+        end.compact
+      end
 
       pool.shutdown
       pool.wait_for_termination
-
-      result = futures.map do |x|
-        x.value.tap do
-          raise(x.reason) if x.rejected?
-        end
-      end.compact
 
       attrs = result.to_h
 
