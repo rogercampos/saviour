@@ -53,7 +53,7 @@ module Saviour
     end
 
     def stash(hash)
-      @stash.merge!(hash)
+      @stash.deep_merge!(hash)
     end
 
     def stashed
