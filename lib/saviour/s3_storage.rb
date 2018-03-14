@@ -18,7 +18,7 @@ module Saviour
       @region = conf[:region] || raise(ArgumentError, "region is required")
     end
 
-    def write(file_or_contents, path)
+    def write(contents, path)
       path = sanitize_leading_slash(path)
 
       # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html
@@ -26,13 +26,37 @@ module Saviour
         raise(KeyTooLarge, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
       end
 
-      client.put_object(@create_options.merge(body: file_or_contents, bucket: @bucket, key: path))
+      if contents.bytesize < 5_368_709_120
+        client.put_object(@create_options.merge(body: contents, bucket: @bucket, key: path))
+
+      else
+        # TODO: Stream directly raw contents using multipart AWS api
+        Tempfile.open('') do |f|
+          f.binmode
+
+          if contents.respond_to?(:read) # io-like object
+            f.write(contents.read(1024 * 1024)) until contents.eof?
+          else
+            f.write(contents)
+          end
+
+          f.flush
+          write_from_file(path, f)
+        end
+      end
     end
 
     def write_from_file(file, path)
-      file.rewind
+      path = sanitize_leading_slash(path)
 
-      write(file, path)
+      # http://docs.aws.amazon.com/AmazonS3/latest/dev/UsingMetadata.html
+      if path.bytesize > 1024
+        raise(KeyTooLarge, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
+      end
+
+      s3 = Aws::S3::Resource.new(client_options)
+      obj = s3.bucket(@bucket).object(path)
+      obj.upload_file(file, @create_options)
     end
 
     def read_to_file(path, dest_file)
@@ -58,7 +82,7 @@ module Saviour
       client.delete_object(
         bucket: @bucket,
         key: path,
-      )
+        )
     end
 
     def exists?(path)
@@ -125,11 +149,16 @@ module Saviour
     end
 
     def client
-      @client ||= Aws::S3::Client.new(
+      @client ||= Aws::S3::Client.new(client_options)
+    end
+
+    def client_options
+      @client_options ||= {
         access_key_id: @conf[:aws_access_key_id],
         secret_access_key: @conf[:aws_secret_access_key],
         region: @region
-      )
+
+      }
     end
   end
 end
