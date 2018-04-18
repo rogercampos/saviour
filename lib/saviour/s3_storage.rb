@@ -26,6 +26,7 @@ module Saviour
         raise(KeyTooLarge, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
       end
 
+      # TODO: Use multipart api
       client.put_object(@create_options.merge(body: file_or_contents, bucket: @bucket, key: path))
     end
 
@@ -36,20 +37,23 @@ module Saviour
     end
 
     def read_to_file(path, dest_file)
+      path = sanitize_leading_slash(path)
+
       dest_file.binmode
       dest_file.rewind
       dest_file.truncate(0)
 
-      io = get_file_stringio(path)
-      while data = io.read(1024 * 1024)
-        dest_file.write(data)
-      end
-
-      dest_file.flush
+      client.get_object({ bucket: @bucket, key: path }, target: dest_file)
+    rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchKey
+      raise FileNotPresent, "Trying to read an unexisting path: #{path}"
     end
 
     def read(path)
-      get_file_stringio(path).read
+      path = sanitize_leading_slash(path)
+
+      client.get_object(bucket: @bucket, key: path).body.read
+    rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchKey
+      raise FileNotPresent, "Trying to read an unexisting path: #{path}"
     end
 
     def delete(path)
@@ -57,7 +61,7 @@ module Saviour
 
       client.delete_object(
         bucket: @bucket,
-        key: path,
+        key: path
       )
     end
 
@@ -100,17 +104,6 @@ module Saviour
     end
 
     private
-
-    def get_file_stringio(path)
-      path = sanitize_leading_slash(path)
-
-      client.get_object(
-        bucket: @bucket,
-        key: path
-      ).body
-    rescue Aws::S3::Errors::NotFound, Aws::S3::Errors::NoSuchKey
-      raise FileNotPresent, "Trying to read an unexisting path: #{path}"
-    end
 
     def public_url_prefix
       if @public_url_prefix.respond_to?(:call)
