@@ -22,7 +22,7 @@ describe "Make one attachment follow another one" do
   let(:klass) {
     a = Class.new(Test) { include Saviour::Model }
     a.attach_file :file, uploader
-    a.attach_file :file_thumb, uploader_for_version, follow: :file
+    a.attach_file :file_thumb, uploader_for_version, follow: :file, dependent: :ignore
     a
   }
 
@@ -48,6 +48,73 @@ describe "Make one attachment follow another one" do
 
       expect(a.file.read.bytesize).to eq 6
       expect(a.file_thumb.read.bytesize).to eq 32
+    end
+  end
+
+  describe "dependent destruction" do
+    context "with dependent: :destroy" do
+      let(:klass) {
+        a = Class.new(Test) { include Saviour::Model }
+        a.attach_file :file, uploader
+        a.attach_file :file_thumb, uploader_for_version, follow: :file, dependent: :destroy
+        a
+      }
+
+      it "removes followers" do
+        a = klass.create! file: StringIO.new("some contents without a filename")
+        expect(a.file_thumb.read).to eq "some contents without a filename"
+
+        a.remove_file!
+        expect(a.file_thumb?).to be_falsey
+        expect(a.file_thumb.read).to be_nil
+      end
+
+      it "does not remove follower if it has been changed before destruction in a transaction" do
+        a = klass.create! file: StringIO.new("some contents without a filename")
+        expect(a.file_thumb.read).to eq "some contents without a filename"
+
+        ActiveRecord::Base.transaction do
+          a.file_thumb = StringIO.new("replaced contents")
+          a.remove_file!
+          a.save!
+        end
+
+        expect(a.file_thumb?).to be_truthy
+        expect(a.file_thumb.read).to eq "replaced contents"
+        expect(a.file?).to be_falsey
+      end
+
+      it "does not remove follower if it has been changed before destruction outside a transaction" do
+        a = klass.create! file: StringIO.new("some contents without a filename")
+        expect(a.file_thumb.read).to eq "some contents without a filename"
+
+        a.file_thumb = StringIO.new("replaced contents")
+        a.remove_file!
+        a.save!
+
+        expect(a.file_thumb?).to be_truthy
+        expect(a.file_thumb.read).to eq "replaced contents"
+        expect(a.file?).to be_falsey
+      end
+    end
+
+    context "with dependent: :ignore" do
+      let(:klass) {
+        a = Class.new(Test) { include Saviour::Model }
+        a.attach_file :file, uploader
+        a.attach_file :file_thumb, uploader_for_version, follow: :file, dependent: :ignore
+        a
+      }
+
+      it "leaves followers" do
+        a = klass.create! file: StringIO.new("some contents without a filename")
+        expect(a.file_thumb.read).to eq "some contents without a filename"
+
+        a.remove_file!
+        expect(a.file_thumb?).to be_truthy
+        expect(a.file_thumb.read).to eq "some contents without a filename"
+        expect(a.file.read).to be_nil
+      end
     end
   end
 end

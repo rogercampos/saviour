@@ -22,7 +22,7 @@ describe "Introspection of attached files" do
   let(:klass) {
     a = Class.new(Test) { include Saviour::Model }
     a.attach_file :file, uploader
-    a.attach_file :file_thumb, uploader_for_version, follow: :file
+    a.attach_file :file_thumb, uploader_for_version, follow: :file, dependent: :ignore
     a
   }
 

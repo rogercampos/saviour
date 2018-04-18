@@ -71,8 +71,12 @@ module Saviour
     def assign(object)
       raise(SourceError, "given object to #assign or #<attach_as>= must respond to `read`") if object && !object.respond_to?(:read)
 
-      followers = @model.class.attached_followers_per_leader[@attached_as]
-      followers.each { |x| @model.send(x).assign(object) unless @model.send(x).changed? } if followers
+      followers = @model.class.followers_per_leader_config[@attached_as]
+
+      (followers || []).each do |x|
+        attachment = @model.send(x[:attachment])
+        attachment.assign(object) unless attachment.changed?
+      end
 
       @source_data = nil
       @source = object
