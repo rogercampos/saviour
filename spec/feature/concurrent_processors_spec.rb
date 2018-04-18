@@ -3,7 +3,13 @@ require 'spec_helper'
 describe "concurrent processors" do
   before { allow(Saviour::Config).to receive(:storage).and_return(Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com")) }
 
-  WAIT_TIME = 0.5
+  if ENV['TRAVIS']
+    WAIT_TIME = 2
+    THRESHOLD = 1.5
+  else
+    WAIT_TIME = 0.5
+    THRESHOLD = 0.1
+  end
 
   let(:uploader) {
     Class.new(Saviour::BaseUploader) {
@@ -52,7 +58,7 @@ describe "concurrent processors" do
                            file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       start_times = a.times.values.sort
-      expect((start_times[0] - start_times[-1]).abs).to be_within(0.1).of(0)
+      expect((start_times[0] - start_times[-1]).abs).to be_within(THRESHOLD).of(0)
     end
 
     it 'works in serial with 1 worker' do
@@ -80,8 +86,8 @@ describe "concurrent processors" do
                            file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       start_times = a.times.values.sort
-      expect((start_times[0] - start_times[1]).abs).to be_within(0.1).of(0)
-      expect((start_times[2] - start_times[3]).abs).to be_within(0.1).of(0)
+      expect((start_times[0] - start_times[1]).abs).to be_within(THRESHOLD).of(0)
+      expect((start_times[2] - start_times[3]).abs).to be_within(THRESHOLD).of(0)
       expect((start_times[0] - start_times[-1]).abs).to be > WAIT_TIME
     end
   end
@@ -96,7 +102,7 @@ describe "concurrent processors" do
                         file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       start_times = a.times.values.sort
-      expect((start_times[0] - start_times[-1]).abs).to be_within(0.1).of(0)
+      expect((start_times[0] - start_times[-1]).abs).to be_within(THRESHOLD).of(0)
     end
 
     it 'works in serial with 1 worker' do
@@ -120,8 +126,8 @@ describe "concurrent processors" do
                         file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
 
       start_times = a.times.values.sort
-      expect((start_times[0] - start_times[1]).abs).to be_within(0.1).of(0)
-      expect((start_times[2] - start_times[3]).abs).to be_within(0.1).of(0)
+      expect((start_times[0] - start_times[1]).abs).to be_within(THRESHOLD).of(0)
+      expect((start_times[2] - start_times[3]).abs).to be_within(THRESHOLD).of(0)
       expect((start_times[0] - start_times[-1]).abs).to be > WAIT_TIME
     end
   end
