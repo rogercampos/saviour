@@ -10,8 +10,8 @@ module Saviour
 
       @klass.class_attribute :attached_files
       @klass.attached_files = []
-      @klass.class_attribute :attached_followers_per_leader
-      @klass.attached_followers_per_leader = {}
+      @klass.class_attribute :followers_per_leader_config
+      @klass.followers_per_leader_config = {}
 
       klass = @klass
       persistence_klass = @persistence_klass
@@ -21,8 +21,14 @@ module Saviour
         uploader_klass = maybe_uploader_klass[0]
 
         if opts[:follow]
-          klass.attached_followers_per_leader[opts[:follow]] ||= []
-          klass.attached_followers_per_leader[opts[:follow]].push(attach_as)
+          dependent = opts[:dependent]
+
+          if dependent.nil? || ![:destroy, :ignore].include?(dependent)
+            raise(ConfigurationError, "You must specify a :dependent option when using :follow. Use either :destroy or :ignore")
+          end
+
+          klass.followers_per_leader_config[opts[:follow]] ||= []
+          klass.followers_per_leader_config[opts[:follow]].push({ attachment: attach_as, dependent: dependent })
         end
 
         if uploader_klass.nil? && block.nil?
@@ -50,22 +56,44 @@ module Saviour
             send(attach_as).changed?
           end
 
-          define_method("remove_#{attach_as}!") do
-            work = proc do
-              send(attach_as).delete
-              layer = persistence_klass.new(self)
-              layer.write(attach_as, nil)
+          define_method("remove_#{attach_as}!") do |dependent: nil|
+            if !dependent.nil? && ![:destroy, :ignore].include?(dependent)
+              raise ArgumentError, ":dependent option must be either :destroy or :ignore"
             end
 
-            if ActiveRecord::Base.connection.current_transaction.open?
-              DbHelpers.run_after_commit &work
-            else
-              work.call
+            layer = persistence_klass.new(self)
+
+            attachment_remover = proc do |attach_as|
+              work = proc do
+                send(attach_as).delete
+                layer.write(attach_as, nil)
+              end
+
+              if ActiveRecord::Base.connection.current_transaction.open?
+                DbHelpers.run_after_commit &work
+              else
+                work.call
+              end
+            end
+
+            attachment_remover.call(attach_as)
+
+            (self.class.followers_per_leader_config[attach_as] || []).each do |follower|
+              dependent_option = dependent || follower[:dependent]
+              next if dependent_option == :ignore || send(follower[:attachment]).changed?
+
+              attachment_remover.call(follower[:attachment])
             end
           end
         end
 
         klass.include mod
+      end
+
+      @klass.define_singleton_method("attached_followers_per_leader") do
+        self.followers_per_leader_config.map do |leader, followers|
+          [leader, followers.map { |data| data[:attachment] }]
+        end.to_h
       end
 
       @klass.class_attribute :__saviour_validations
