@@ -48,11 +48,12 @@ module Saviour
       def source_as_file
         @source_as_file ||= begin
           f = Tempfile.new("")
+          f.binmode
 
           if source_type == :file
             FileUtils.cp(@file.source.path, f.path)
           else
-            ::File.write(f.path, source_as_memory)
+            ::File.binwrite(f.path, source_as_memory)
           end
 
           f

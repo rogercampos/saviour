@@ -106,6 +106,7 @@ module Saviour
       raise CannotCopy, "must be persisted" unless persisted?
 
       temp_file = Tempfile.new([::File.basename(filename, ".*"), ::File.extname(filename)])
+      temp_file.binmode
 
       begin
         Config.storage.read_to_file(@persisted_path, temp_file)
@@ -124,6 +125,7 @@ module Saviour
       return yield if source_type == :stream
 
       tmpfile = Tempfile.new([::File.basename(file.path, ".*"), ::File.extname(file.path)])
+      tmpfile.binmode
       FileUtils.cp(file.path, tmpfile.path)
 
       begin
