@@ -5,7 +5,7 @@ module Saviour
     end
 
     def detected_filename
-      filename || original_filename || path_filename
+      original_filename || filename || path_filename
     end
 
     def filename
