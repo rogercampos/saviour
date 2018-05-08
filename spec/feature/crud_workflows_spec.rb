@@ -193,6 +193,28 @@ describe "saving a new file" do
       }
     }
 
+    it "with no attachment" do
+      a = klass.create!
+      b = a.dup
+      b.save!
+      expect(b[:file]).to be_nil
+    end
+
+    it "on non persisted object with no attachment" do
+      a = klass.new
+      b = a.dup
+      b.save!
+      expect(b[:file]).to be_nil
+    end
+
+    it "on non persisted object with attachment" do
+      a = klass.new file: Saviour::StringSource.new("contents", "file.txt")
+      b = a.dup
+      b.save!
+      expect(b[:file]).to_not be_nil
+      expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
+    end
+
     it "creates a non persisted file attachment" do
       a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
       expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy

@@ -59,7 +59,7 @@ module Saviour
 
       if persisted?
         new_file.assign(Saviour::StringSource.new(read, filename))
-      else
+      elsif @source
         new_file.assign(Saviour::StringSource.new(source_data, filename_to_be_assigned))
       end
 
