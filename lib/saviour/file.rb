@@ -66,6 +66,10 @@ module Saviour
       new_file
     end
 
+    def reload
+      @model.instance_variable_set("@__uploader_#{@attached_as}", nil)
+    end
+
     alias_method :url, :public_url
 
     def assign(object)
