@@ -52,6 +52,10 @@ module Saviour
             send(attach_as).assign(value)
           end
 
+          define_method("#{attach_as}?") do
+            send(attach_as).present?
+          end
+
           define_method("#{attach_as}_changed?") do
             send(attach_as).changed?
           end

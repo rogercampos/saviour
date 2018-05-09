@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe "saving a new file" do
+describe "CRUD" do
   before { allow(Saviour::Config).to receive(:storage).and_return(Saviour::LocalStorage.new(local_prefix: @tmpdir, public_url_prefix: "http://domain.com")) }
 
   let(:uploader) {
@@ -231,6 +231,24 @@ describe "saving a new file" do
 
       expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
       expect(Saviour::Config.storage.read(a[:file])).to eq Saviour::Config.storage.read(b[:file])
+    end
+  end
+
+  describe "presence" do
+    it "false when no assigned file" do
+      a = klass.create!
+      expect(a.file?).to be_falsey
+    end
+
+    it "true when no persisted but assigned" do
+      a = klass.create!
+      a.file = Saviour::StringSource.new("contents", "file.txt")
+      expect(a.file?).to be_truthy
+    end
+
+    it "true when persisted and assigned" do
+      a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
+      expect(a.file?).to be_truthy
     end
   end
 end
