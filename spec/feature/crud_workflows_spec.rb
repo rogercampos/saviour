@@ -215,22 +215,28 @@ describe "CRUD" do
       expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
     end
 
-    it "creates a non persisted file attachment" do
+    it "creates a non persisted file attachment with initially clear db paths" do
       a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
       expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
 
       b = a.dup
       expect(b).to_not be_persisted
       expect(b.file).to_not be_persisted
+      expect(b[:file]).to be_nil
     end
 
     it "can be saved" do
       a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
+      path_a = a[:file]
+
       b = a.dup
       b.save!
+      path_b = b[:file]
 
-      expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
-      expect(Saviour::Config.storage.read(a[:file])).to eq Saviour::Config.storage.read(b[:file])
+      expect(path_a).to eq "/store/dir/#{a.id}/file.txt"
+      expect(path_b).to eq "/store/dir/#{b.id}/file.txt"
+      expect(Saviour::Config.storage.exists?(path_b)).to be_truthy
+      expect(Saviour::Config.storage.read(path_a)).to eq Saviour::Config.storage.read(path_b)
     end
   end
 

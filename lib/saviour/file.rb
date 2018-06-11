@@ -54,8 +54,8 @@ module Saviour
       new_file
     end
 
-    def dup
-      new_file = Saviour::File.new(@uploader_klass, @model, @attached_as)
+    def dup(new_model)
+      new_file = Saviour::File.new(@uploader_klass, new_model, @attached_as)
 
       if persisted?
         new_file.assign(Saviour::StringSource.new(read, filename))
