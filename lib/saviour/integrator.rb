@@ -13,11 +13,11 @@ module Saviour
       @klass.class_attribute :followers_per_leader_config
       @klass.followers_per_leader_config = {}
 
-      klass = @klass
       persistence_klass = @persistence_klass
 
       @klass.define_singleton_method "attach_file" do |attach_as, *maybe_uploader_klass, **opts, &block|
-        klass.attached_files.push(attach_as)
+        self.attached_files += [attach_as]
+
         uploader_klass = maybe_uploader_klass[0]
 
         if opts[:follow]
@@ -27,8 +27,9 @@ module Saviour
             raise(ConfigurationError, "You must specify a :dependent option when using :follow. Use either :destroy or :ignore")
           end
 
-          klass.followers_per_leader_config[opts[:follow]] ||= []
-          klass.followers_per_leader_config[opts[:follow]].push({ attachment: attach_as, dependent: dependent })
+          self.followers_per_leader_config = self.followers_per_leader_config.dup
+          self.followers_per_leader_config[opts[:follow]] ||= []
+          self.followers_per_leader_config[opts[:follow]].push({ attachment: attach_as, dependent: dependent })
         end
 
         if uploader_klass.nil? && block.nil?
@@ -91,7 +92,7 @@ module Saviour
           end
         end
 
-        klass.include mod
+        self.include mod
       end
 
       @klass.define_singleton_method("attached_followers_per_leader") do
@@ -103,13 +104,13 @@ module Saviour
       @klass.class_attribute :__saviour_validations
 
       @klass.define_singleton_method("attach_validation") do |attach_as, method_name = nil, &block|
-        klass.__saviour_validations ||= Hash.new { [] }
-        klass.__saviour_validations[attach_as] += [{ method_or_block: method_name || block, type: :memory }]
+        self.__saviour_validations ||= Hash.new { [] }
+        self.__saviour_validations[attach_as] += [{ method_or_block: method_name || block, type: :memory }]
       end
 
       @klass.define_singleton_method("attach_validation_with_file") do |attach_as, method_name = nil, &block|
-        klass.__saviour_validations ||= Hash.new { [] }
-        klass.__saviour_validations[attach_as] += [{ method_or_block: method_name || block, type: :file }]
+        self.__saviour_validations ||= Hash.new { [] }
+        self.__saviour_validations[attach_as] += [{ method_or_block: method_name || block, type: :file }]
       end
     end
   end

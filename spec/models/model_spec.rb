@@ -30,4 +30,53 @@ describe Saviour do
 
     expect(klass2.new.file).to respond_to :exists?
   end
+
+  it "subclasses can have independent attachments" do
+    uploader = Class.new(Saviour::BaseUploader) do
+      store_dir { "/store/dir" }
+    end
+
+    klass = Class.new(Test) do
+      include Saviour::Model
+    end
+    expect(klass.attached_files).to eq([])
+
+    klass2 = Class.new(klass) do
+      attach_file :file, uploader
+    end
+
+    klass3 = Class.new(klass) do
+      attach_file :file_thumb, uploader
+    end
+
+    expect(klass2.attached_files).to eq([:file])
+    expect(klass.attached_files).to eq([])
+    expect(klass3.attached_files).to eq([:file_thumb])
+  end
+
+  it "subclasses can have independent attachments with followers" do
+    uploader = Class.new(Saviour::BaseUploader) do
+      store_dir { "/store/dir" }
+    end
+
+    klass = Class.new(Test) do
+      include Saviour::Model
+    end
+
+    klass2 = Class.new(klass) do
+      attach_file :file, uploader
+      attach_file :file_thumb, uploader, follow: :file, dependent: :destroy
+    end
+
+    klass3 = Class.new(klass) do
+      attach_file :file_thumb_2, uploader
+      attach_file :file_thumb_3, uploader, follow: :file_thumb_2, dependent: :destroy
+    end
+
+    expect(klass2.attached_files).to eq([:file, :file_thumb])
+    expect(klass2.attached_followers_per_leader).to eq({file: [:file_thumb]})
+
+    expect(klass3.attached_files).to eq([:file_thumb_2, :file_thumb_3])
+    expect(klass3.attached_followers_per_leader).to eq({file_thumb_2: [:file_thumb_3]})
+  end
 end
