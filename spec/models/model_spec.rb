@@ -79,4 +79,34 @@ describe Saviour do
     expect(klass3.attached_files).to eq([:file_thumb_2, :file_thumb_3])
     expect(klass3.attached_followers_per_leader).to eq({file_thumb_2: [:file_thumb_3]})
   end
+
+  it "subclasses can have independent validations" do
+    uploader = Class.new(Saviour::BaseUploader) do
+      store_dir { "/store/dir" }
+    end
+
+    klass = Class.new(Test) do
+      include Saviour::Model
+    end
+
+    klass2 = Class.new(klass) do
+      attach_file :file, uploader
+      attach_validation :file do |contents, filename|
+        # pass
+      end
+    end
+
+    klass3 = Class.new(klass) do
+      attach_file :file_thumb_2, uploader
+      attach_validation :file_thumb_2 do |contents, filename|
+        # pass
+      end
+    end
+
+    expect(klass2.__saviour_validations.size).to eq 1
+    expect(klass2.__saviour_validations.keys).to eq [:file]
+
+    expect(klass3.__saviour_validations.size).to eq 1
+    expect(klass3.__saviour_validations.keys).to eq [:file_thumb_2]
+  end
 end

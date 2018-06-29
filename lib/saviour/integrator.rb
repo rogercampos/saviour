@@ -102,14 +102,15 @@ module Saviour
       end
 
       @klass.class_attribute :__saviour_validations
+      @klass.__saviour_validations = Hash.new { [] }
 
       @klass.define_singleton_method("attach_validation") do |attach_as, method_name = nil, &block|
-        self.__saviour_validations ||= Hash.new { [] }
+        self.__saviour_validations = self.__saviour_validations.dup
         self.__saviour_validations[attach_as] += [{ method_or_block: method_name || block, type: :memory }]
       end
 
       @klass.define_singleton_method("attach_validation_with_file") do |attach_as, method_name = nil, &block|
-        self.__saviour_validations ||= Hash.new { [] }
+        self.__saviour_validations = self.__saviour_validations.dup
         self.__saviour_validations[attach_as] += [{ method_or_block: method_name || block, type: :file }]
       end
     end
