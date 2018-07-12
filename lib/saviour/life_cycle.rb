@@ -84,9 +84,23 @@ module Saviour
 
     def delete!
       DbHelpers.run_after_commit do
-        attached_files.each do |column|
-          @model.send(column).delete
+        pool = Concurrent::FixedThreadPool.new(Saviour::Config.concurrent_workers)
+
+        futures = attached_files.map do |column|
+          Concurrent::Future.execute(executor: pool) {
+            @model.send(column).delete
+          }
         end
+
+        ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
+          futures.each do |future|
+            future.value
+            raise(future.reason) if future.rejected?
+          end
+        end
+
+        pool.shutdown
+        pool.wait_for_termination
       end
     end
 
