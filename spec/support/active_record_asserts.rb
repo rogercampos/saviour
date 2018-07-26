@@ -30,6 +30,15 @@ RSpec.configure do |config|
 end
 
 ActiveSupport::Notifications.subscribe "sql.active_record" do |name, started, finished, unique_id, data|
-  AssertionsTracker.data.push(data[:sql]) if data[:name] == "SQL"
+  if ActiveRecord.gem_version >= Gem::Version.new("5.2.0")
+    if data[:name] =~ /(Create|Update|Destroy)/
+      sql = data[:sql]
+      sql = sql.gsub("?").with_index { |_, i| ActiveRecord::Base.connection.quote(data[:type_casted_binds][i]) }
+
+      AssertionsTracker.data.push(sql)
+    end
+  else
+    AssertionsTracker.data.push(data[:sql]) if data[:name] == "SQL"
+  end
 end
 

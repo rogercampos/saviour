@@ -40,10 +40,8 @@ module Saviour
           define_method(attach_as) do
             instance_variable_get("@__uploader_#{attach_as}") || begin
               uploader_klass = Class.new(Saviour::BaseUploader, &block) if block
-              new_file = ::Saviour::File.new(uploader_klass, self, attach_as)
-
               layer = persistence_klass.new(self)
-              new_file.set_path!(layer.read(attach_as))
+              new_file = ::Saviour::File.new(uploader_klass, self, attach_as, layer.read(attach_as))
 
               instance_variable_set("@__uploader_#{attach_as}", new_file)
             end
@@ -57,8 +55,32 @@ module Saviour
             send(attach_as).present?
           end
 
+          define_method("#{attach_as}_was") do
+            instance_variable_get("@__uploader_#{attach_as}_was")
+          end
+
           define_method("#{attach_as}_changed?") do
             send(attach_as).changed?
+          end
+
+          define_method(:changed_attributes) do
+            if send("#{attach_as}_changed?")
+              super().merge(attach_as => send("#{attach_as}_was"))
+            else
+              super()
+            end
+          end
+
+          define_method(:changes) do
+            if send("#{attach_as}_changed?")
+              super().merge(attach_as => send("#{attach_as}_change"))
+            else
+              super()
+            end
+          end
+
+          define_method("#{attach_as}_change") do
+            [send("#{attach_as}_was"), send(attach_as)]
           end
 
           define_method("remove_#{attach_as}!") do |dependent: nil|

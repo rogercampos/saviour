@@ -5,13 +5,14 @@ module Saviour
     attr_reader :persisted_path
     attr_reader :source
 
-    def initialize(uploader_klass, model, attached_as)
+    def initialize(uploader_klass, model, attached_as, persisted_path = nil)
       @uploader_klass, @model, @attached_as = uploader_klass, model, attached_as
       @source_was = @source = nil
-    end
+      @persisted_path = persisted_path
 
-    def set_path!(path)
-      @persisted_path = path
+      if persisted_path
+        @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path))
+      end
     end
 
     def exists?
@@ -48,10 +49,7 @@ module Saviour
 
     def clone
       return nil unless persisted?
-
-      new_file = Saviour::File.new(@uploader_klass, @model, @attached_as)
-      new_file.set_path! @persisted_path
-      new_file
+      Saviour::File.new(@uploader_klass, @model, @attached_as, @persisted_path)
     end
 
     def dup(new_model)
@@ -85,8 +83,8 @@ module Saviour
       @source_data = nil
       @source = object
 
-      if changed? && @model.respond_to?("#{@attached_as}_will_change!")
-        @model.send "#{@attached_as}_will_change!"
+      if changed? && @model.instance_variable_get("@__uploader_#{@attached_as}_was").nil?
+        @model.instance_variable_set("@__uploader_#{@attached_as}_was", clone)
       end
 
       @persisted_path = nil if object
@@ -162,6 +160,7 @@ module Saviour
           end
 
           @persisted_path = path
+          @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path))
           path
         end
       end

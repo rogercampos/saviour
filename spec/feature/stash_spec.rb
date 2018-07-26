@@ -72,10 +72,9 @@ describe "stash data on process" do
 
     a = klass.create!
 
-    # - 1 initial empty query
     # - 2 queries to update size
     # - 1 query to assign stored paths
-    expect_to_yield_queries(count: 4) do
+    expect_to_yield_queries(count: 3) do
       a.update_attributes! file: Saviour::StringSource.new("a" * 74, "file.txt"),
                            file_thumb: Saviour::StringSource.new("a" * 31, "file_2.txt")
     end
