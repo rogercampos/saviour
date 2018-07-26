@@ -91,9 +91,12 @@ module Saviour
             layer = persistence_klass.new(self)
 
             attachment_remover = proc do |attach_as|
+              layer.write(attach_as, nil)
+              deletion_path = send(attach_as).persisted_path
+              send(attach_as).delete
+
               work = proc do
-                send(attach_as).delete
-                layer.write(attach_as, nil)
+                Config.storage.delete(deletion_path) if deletion_path
               end
 
               if ActiveRecord::Base.connection.current_transaction.open?

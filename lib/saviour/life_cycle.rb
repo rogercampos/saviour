@@ -88,6 +88,8 @@ module Saviour
 
         futures = attached_files.map do |column|
           Concurrent::Future.execute(executor: pool) {
+            path = @model.send(column).persisted_path
+            Config.storage.delete(path) if path
             @model.send(column).delete
           }
         end

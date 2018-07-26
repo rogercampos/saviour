@@ -25,7 +25,6 @@ module Saviour
     end
 
     def delete
-      persisted? && Config.storage.delete(@persisted_path)
       @persisted_path = nil
       @source_was = nil
       @source = nil
@@ -66,6 +65,7 @@ module Saviour
 
     def reload
       @model.instance_variable_set("@__uploader_#{@attached_as}", nil)
+      @model.instance_variable_set("@__uploader_#{@attached_as}_was", nil)
     end
 
     alias_method :url, :public_url

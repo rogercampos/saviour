@@ -23,6 +23,7 @@ describe "remove attachment" do
 
       a.remove_file!
 
+      expect(a.file.persisted?).to be_falsey
       expect(a.file.read).to be_falsey
       expect(a[:file]).to be_nil
     end
@@ -44,24 +45,49 @@ describe "remove attachment" do
       a = klass.create! file: Saviour::StringSource.new("Some contents", "filename.txt")
 
       expect(a.file.read).to eq "Some contents"
+      path = a[:file]
 
       ActiveRecord::Base.transaction do
         a.remove_file!
         raise ActiveRecord::Rollback
       end
 
+      # Changes only propagate once the model is manually reloaded, same as any
+      # other AR attribute
+      expect(a.file.persisted?).to be_falsey
+
+      a.reload
+
+      expect(a.file.persisted?).to be_truthy
       expect(a.file.read).to eq "Some contents"
-      expect(a[:file]).to be_present
+      expect(Saviour::Config.storage.exists?(path)).to be_truthy
     end
 
-    it "removes associated file and column on commit" do
+    it "removes associated file and column after commit" do
+      a = klass.create! file: Saviour::StringSource.new("Some contents", "filename.txt")
+
+      expect(a.file.read).to eq "Some contents"
+      path = a[:file]
+
+      ActiveRecord::Base.transaction do
+        a.remove_file!
+        expect(Saviour::Config.storage.exists?(path)).to be_truthy
+      end
+
+      expect(Saviour::Config.storage.exists?(path)).to be_falsey
+      expect(a.file.read).to be_falsey
+      expect(a[:file]).to be_nil
+    end
+
+    it "attachment appears as nil after deletion and before commit" do
       a = klass.create! file: Saviour::StringSource.new("Some contents", "filename.txt")
 
       expect(a.file.read).to eq "Some contents"
 
       ActiveRecord::Base.transaction do
         a.remove_file!
-        expect(a.file.read).to eq "Some contents"
+        expect(a.file.persisted?).to be_falsey
+        expect(a[:file]).to be_nil
       end
 
       expect(a.file.read).to be_falsey
