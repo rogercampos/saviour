@@ -105,6 +105,27 @@ describe "remove attachment" do
       expect(a.file.read).to be_falsey
       expect(a[:file]).to be_nil
     end
+
+    it "allows for the same file path to be deleted and later updated" do
+      a = klass.create! file: Saviour::StringSource.new("Some contents", "filename.txt")
+      path = a[:file]
+
+      ActiveRecord::Base.transaction do
+        a.remove_file!
+        expect(a.file.persisted?).to be_falsey
+        expect(Saviour::Config.storage.exists?(path)).to be_truthy
+        expect(Saviour::Config.storage.read(path)).to eq "Some contents"
+
+        a.update_attributes!(file: Saviour::StringSource.new("Other contents", "filename.txt"))
+        expect(a.file.persisted?).to be_truthy
+        expect(a.file.read).to eq "Other contents"
+        expect(Saviour::Config.storage.exists?(path)).to be_truthy
+      end
+
+      # Deletion has not occurred
+      expect(Saviour::Config.storage.exists?(path)).to be_truthy
+      expect(Saviour::Config.storage.read(path)).to eq "Other contents"
+    end
   end
 
   context "with followers" do
