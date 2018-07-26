@@ -1,6 +1,7 @@
 require 'saviour/version'
 require 'saviour/base_uploader'
 require 'saviour/file'
+require 'saviour/read_only_file'
 require 'saviour/local_storage'
 require 'saviour/s3_storage'
 require 'saviour/config'

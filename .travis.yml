@@ -8,8 +8,8 @@ rvm:
   - 2.5.0
 
 gemfile:
-  - gemfiles/5.0.gemfile
   - gemfiles/5.1.gemfile
+  - gemfiles/5.2.gemfile
 
 addons:
   code_climate:

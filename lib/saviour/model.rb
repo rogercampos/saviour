@@ -26,6 +26,7 @@ module Saviour
       self.class.attached_files.each do |attach_as|
         duped[attach_as] = nil
         duped.instance_variable_set("@__uploader_#{attach_as}", send(attach_as).dup(duped))
+        duped.instance_variable_set("@__uploader_#{attach_as}_was", nil)
       end
 
       duped
