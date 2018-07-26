@@ -176,7 +176,7 @@ module Saviour
 
     def source_data
       @source_data ||= begin
-        @source.rewind
+        @source.rewind if @source.respond_to?(:rewind)
         @source.read
       end
     end

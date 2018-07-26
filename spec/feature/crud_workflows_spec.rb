@@ -123,6 +123,14 @@ describe "CRUD" do
         end
       end
     end
+
+    it "can be created from another saviour attachment" do
+      a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
+      b = klass.create! file: a.file
+
+      expect(b.file.read).to eq "contents"
+      expect(b.file.filename).to eq "file.txt"
+    end
   end
 
   describe "deletion" do
