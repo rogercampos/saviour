@@ -44,6 +44,20 @@ describe Saviour::BaseUploader do
       expect(subject.store_dirs[1].call).to eq "/my/dir/4"
     end
 
+    it "uses storage from config by default" do
+      mocked_storage = double(:mocked_storage)
+      allow(Saviour::Config).to receive(:storage).and_return(mocked_storage)
+
+      expect(subject.storage).to eq mocked_storage
+    end
+
+    it "allows to override storage" do
+      custom_storage = double(:custom_storage)
+
+      subject.with_storage(custom_storage)
+      expect(subject.storage).to eq custom_storage
+    end
+
     it "is not accessible from subclasses, works in isolation" do
       subject.process :hola
       expect(subject.processors[0][:method_or_block]).to eq :hola

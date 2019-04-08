@@ -64,6 +64,10 @@ module Saviour
       @store_dir ||= Uploader::StoreDirExtractor.new(self).store_dir
     end
 
+    def storage
+      self.class.storage
+    end
+
     class << self
       def store_dirs
         @store_dirs ||= []
@@ -71,6 +75,10 @@ module Saviour
 
       def processors
         @processors ||= []
+      end
+
+      def storage
+        @storage ||= Config.storage
       end
 
       def process(name = nil, opts = {}, type = :memory, &block)
@@ -87,6 +95,10 @@ module Saviour
 
       def store_dir(name = nil, &block)
         store_dirs.push(name || block)
+      end
+
+      def with_storage(storage)
+        @storage = storage
       end
 
       def after_upload(&block)

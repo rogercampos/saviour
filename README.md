@@ -6,7 +6,7 @@
 
 Saviour is a tool to help you manage files attached to Active Record models. It tries to be minimal about the
 use cases it covers, but with a deep and complete coverage on the ones it does. For example, it offers
-no support for image manipulation, but it does implement dirty tracking and transactional-aware behavior.  
+no support for image manipulation, but it does implement dirty tracking and transactional-aware behavior.
 
 It also tries to have a flexible design, so that additional features can be added by the user on top of it.
 You can see an example of such typical features on the [FAQ section at the end of this document](#faq).
@@ -24,15 +24,15 @@ that wants to be solved.
 They offer a complete out-of-the-box solution that covers many different needs:
 image management, caching of files for seamless integration with html forms, direct uploads to s3, metadata
 extraction, background jobs integration or support for different ORMs are some of the features you can find on
-those libraries. 
+those libraries.
 
 If you need those functionalities and they suit your needs, they can be perfect solutions for you.
 
 The counterpart, however, is that they have more dependencies and, as they cover a broader spectrum of
-use cases, they tend to impose more conventions that are expected to be followed as is. If you don't want, 
+use cases, they tend to impose more conventions that are expected to be followed as is. If you don't want,
 or can't follow some of those conventions then you're out of luck.
 
-Saviour provides a battle-tested infrastructure for storing files following an AR model 
+Saviour provides a battle-tested infrastructure for storing files following an AR model
 life-cycle which can be easily extended to suit your custom needs.
 
 
@@ -53,6 +53,7 @@ And then execute:
 <!-- START doctoc generated TOC please keep comment here to allow auto update -->
 <!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
 
+
 - [Quick start](#quick-start)
   - [General Usage](#general-usage)
     - [Api on attachment](#api-on-attachment)
@@ -62,6 +63,7 @@ And then execute:
     - [S3 Storage](#s3-storage)
   - [Uploader classes](#uploader-classes)
     - [store_dir](#store_dir)
+    - [with_storage](#with_storage)
     - [Processors](#processors)
       - [halt_process](#halt_process)
   - [Versions](#versions)
@@ -160,7 +162,7 @@ The filename given to the file will be obtained by following this process:
 
 If none of that works, a random filename will be assigned.
 
-The actual storing of the file and any possible related processing (more on this [later](#processors)) will 
+The actual storing of the file and any possible related processing (more on this [later](#processors)) will
 happen on after save, not on assignation. You can assign and re-assign different values to an attachment at no
 cost.
 
@@ -180,7 +182,7 @@ Given the previous example of a User with an avatar attachment, the following me
 - `user.avatar.filename`: Returns the filename of the stored file.
 - `user.avatar.persisted_path`: If persisted, returns the path of the file as stored in the storage, otherwise nil. It's the same as the db column value.
 - `user.avatar.changed?`: Returns true/false if the attachment has been assigned but not yet saved.
- 
+
 Usage example:
 
 ```ruby
@@ -218,7 +220,7 @@ user.avatar.with_copy # => yields a tempfile with the image
 user.avatar.read # => bytecontents
 ```
 
- 
+
 #### Additional api on the model
 
 When you declare an attachment in an AR model, the model is extended with:
@@ -331,7 +333,7 @@ Those options will be forwarded directly to aws-sdk, you can see the complete re
 
 https://docs.aws.amazon.com/sdk-for-ruby/v3/api/Aws/S3/Client.html#put_object-instance_method
 
-Currently, there's no support for different create options on a per-file basis. All stored files will be created 
+Currently, there's no support for different create options on a per-file basis. All stored files will be created
 using the same options. If you want a public access on those files, you can make them public with a general
 rule at the bucket level or using the `acl` create option:
 
@@ -372,7 +374,7 @@ syntax is usually more convenient if you don't have a lot of code in your upload
 ```ruby
 class Post < ApplicationRecord
   include Saviour::Model
-  
+
   attach_file :image do
     store_dir { "uploads/posts/images/#{model.id}/" }
   end
@@ -392,16 +394,16 @@ At runtime the model is available as `model`, and the name of the attachment as 
 ```ruby
 class PostImageUploader < Saviour::BaseUploader
   store_dir { "uploads/posts/images/#{model.id}/" }
-  
+
   # or
   store_dir { "uploads/posts/#{model.id}/#{attached_as}" }
-  
+
   # or more generic
   store_dir { "uploads/#{model.class.name.parameterize}/#{model.id}/#{attached_as}" }
-  
+
   # or with a method
   store_dir :calculate_dir
-  
+
   def calculate_dir
     "uploads/posts/images/#{model.id}/"
   end
@@ -417,9 +419,31 @@ the store dir is a common approach to ensure there will be no collisions. Other 
 random token generation.
 
 
+#### with_storage
+
+This method allows you to override storage on a per-attachment basis.
+It could be useful if generally all attachments in your app are using storage declared
+in `Saviour::Config` but you need more control for some of them.
+
+```ruby
+class Post < ApplicationRecord
+  include Saviour::Model
+
+  attach_file :user_image do
+    store_dir { "uploads/posts/images/#{model.id}/" }
+  end
+
+  attach_file :admin_image do
+    store_dir { "uploads/posts/images/#{model.id}/" }
+    with_storage Saviour::S3Storage.new(bucket: "private-bucket", ...)
+  end
+end
+```
+
+
 #### Processors
 
-Processors are methods (or lambdas) that receive the contents of the file being saved and its filename, 
+Processors are methods (or lambdas) that receive the contents of the file being saved and its filename,
 and in turn return file contents and filename. You can use them to change both values, for example:
 
 ```ruby
@@ -428,8 +452,8 @@ class PostImageUploader < Saviour::BaseUploader
 
   process do |contents, filename|
     new_filename = "#{Digest::MD5.hexdigest(contents)}-#{filename}"
-    new_contents = Zlib::Deflate.deflate(contents) 
-    
+    new_contents = Zlib::Deflate.deflate(contents)
+
     [new_contents, new_filename]
   end
 end
@@ -445,7 +469,7 @@ and share them via a ruby module or via inheritance. In this form, you can pass 
 module ProcessorsHelpers
   def resize(contents, filename, width:, height:)
     new_contents = SomeImageManipulationImplementation.new(contents).resize_to(width, height)
-     
+
     [new_contents, filename]
   end
 end
@@ -454,7 +478,7 @@ class PostImageUploader < Saviour::BaseUploader
   include ProcessorsHelpers
   store_dir { "uploads/posts/#{model.id}/#{attached_as}" }
 
-  process :resize, width: 100, height: 100 
+  process :resize, width: 100, height: 100
 end
 ```
 
@@ -481,8 +505,8 @@ class PostImageUploader < Saviour::BaseUploader
 
   process_with_file do |file, filename|
     `convert -thumbnail 100x100^ #{Shellwords.escape(file.path)}`
-    
-    [file, filename] 
+
+    [file, filename]
   end
 end
 ```
@@ -495,7 +519,7 @@ return a new one. If you return a different file instance, you're expected to cl
 You can mix `process` with `process_with_file` but you should try to avoid it, as it will be a performance penalty
 having to convert between formats.
 
-Also, even if there's just one `process`, the whole contents of the file will be loaded into memory. Avoid that usage 
+Also, even if there's just one `process`, the whole contents of the file will be loaded into memory. Avoid that usage
 if you're conservative about memory usage or take care of restricting the allowed file size you can work with on
 any file upload you accept across your application.
 
@@ -529,7 +553,7 @@ end
 ### Versions
 
 Versions is a common and popular feature on other file management libraries, however, they're usually implemented
-in a way that makes the "versioned" attachments behave differently than normal attachments. 
+in a way that makes the "versioned" attachments behave differently than normal attachments.
 
 Saviour takes another approach: there's no such concept as a "versioned attachment", there're only attachments.
 The way this works with Saviour is by making one attachment "follow" another one, so that whatever is assigned on
@@ -553,8 +577,8 @@ class Post < ApplicationRecord
 end
 ```
 
-Using the `follow: :image` syntax you declare that the `image_thumb` attachment has to be automatically assigned 
-to the same contents as `image` every time `image` is assigned. 
+Using the `follow: :image` syntax you declare that the `image_thumb` attachment has to be automatically assigned
+to the same contents as `image` every time `image` is assigned.
 
 The `:dependent` part is mandatory and indicates if the `image_thumb` attachment has to be removed when the
 `image` is removed (with `dependent: :destroy`) or not (with `dependent: :ignore`).
@@ -839,12 +863,12 @@ swap storages on the fly:
 
 ```ruby
 # config/env/test.rb
-Saviour::Config.storage = ::LocalStorage.new(...) 
+Saviour::Config.storage = ::LocalStorage.new(...)
 
 # spec/support/saviour.rb
 module S3Stub
   mattr_accessor :storage
-  
+
   self.storage = Saviour::S3Storage.new(...)
 end
 
@@ -859,7 +883,7 @@ RSpec.configure do |config|
   end
 end
 
-it "some regular test" do 
+it "some regular test" do
   # local storage here
 end
 
@@ -877,9 +901,9 @@ Saviour::Config.processing_enabled = false
 ```
 
 This will skip all processors, so you'll avoid image manipulations, etc. If you have a more complex application
-and you can't disable all processors, but still would want to skip only the ones related to image manipulation, 
-I would recommend to delegate image manipulation to a specialized class and then stub all of their methods. 
- 
+and you can't disable all processors, but still would want to skip only the ones related to image manipulation,
+I would recommend to delegate image manipulation to a specialized class and then stub all of their methods.
+
 
 ### Sources: url and string
 
@@ -948,15 +972,15 @@ the changes and work from there.
 
 Since Saviour is by design model-based, there may be use cases when this becomes a performance issue, for example:
 
-##### Bypass example: Nested Cloning 
+##### Bypass example: Nested Cloning
 
-Say that you have a model `Post` that has many `Image`s, and you're working with S3. `Post` has 3 attachments and 
-`Image` has 2 attachments. If you want to do a feature to "clone" a post, a simple implementation would be to 
+Say that you have a model `Post` that has many `Image`s, and you're working with S3. `Post` has 3 attachments and
+`Image` has 2 attachments. If you want to do a feature to "clone" a post, a simple implementation would be to
 basically `dup` the instances and save them.
 
 However, for a post with many related images, this would represent many api calls and roundtrips to download
 contents and re-upload them. It would be a lot faster to work with s3 directly, issue api calls to copy the
-files inside s3 directly (no download/upload, and even you could issue those api calls concurrently), 
+files inside s3 directly (no download/upload, and even you could issue those api calls concurrently),
 and then assign manually crafted paths directly to the new instances.
 
 
@@ -969,7 +993,7 @@ extract common behaviors into a module:
 
 ```ruby
 module FileAttachmentHelpers
-  # Shared processors 
+  # Shared processors
 end
 
 module FileAttachment
@@ -1016,9 +1040,9 @@ end
 
 class Post < ApplicationRecord
   include FileAttachment
-  
+
   attach_file_with_defaults :cover # Nothing extra needed
-  
+
   attach_file_with_defaults :image do
     process_with_file :some_extra_thing
   end
@@ -1046,7 +1070,7 @@ module FileAttachment
     def attach_file_with_defaults(*args, &block)
       attached_as = args[0]
       # ...
-    
+
       define_method("remove_#{attached_as}") do
         instance_variable_get("@remove_#{attached_as}")
       end
@@ -1056,7 +1080,7 @@ module FileAttachment
       define_method("remove_#{attached_as}=") do |value|
         instance_variable_set "@remove_#{attached_as}", ActiveRecord::Type::Boolean.new.cast(value)
       end
-      
+
       before_update do
         send("remove_#{attached_as}!") if send("remove_#{attached_as}?")
       end
@@ -1078,7 +1102,7 @@ a.update_attributes(remove_image: "t")
 
 ### How to extract metadata from files
 
-You can use processors to accomplish this. Just be aware that processors run concurrently, so if you want to 
+You can use processors to accomplish this. Just be aware that processors run concurrently, so if you want to
 persist you extracted information in the database probably you'll want to use `stash`, see [the section
 about stash feature for examples](#stash).
 
@@ -1097,8 +1121,8 @@ enqueuing of the job when you detect a change in the attachment:
 class Post < ApplicationRecord
   include Saviour::Model
   attach_file :image
-  
-  before_save do 
+
+  before_save do
     if image_changed?
       # On after commit, enqueue the job
     end
@@ -1112,7 +1136,7 @@ The job then should take the model and the attachment to process and run the pro
 a = Post.find(42)
 a.image.with_copy do |f|
   # manipulate f as desired
-  a.update_attributes! image: f 
+  a.update_attributes! image: f
 end
 ```
 
@@ -1162,4 +1186,3 @@ You can use a processor like this one:
 ## License
 
 The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
