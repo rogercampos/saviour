@@ -11,17 +11,17 @@ module Saviour
       @persisted_path = persisted_path
 
       if persisted_path
-        @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path))
+        @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass))
       end
     end
 
     def exists?
-      persisted? && Config.storage.exists?(@persisted_path)
+      persisted? && @uploader_klass.storage.exists?(@persisted_path)
     end
 
     def read
       return nil unless persisted?
-      Config.storage.read(@persisted_path)
+      @uploader_klass.storage.read(@persisted_path)
     end
 
     def delete
@@ -32,7 +32,7 @@ module Saviour
 
     def public_url
       return nil unless persisted?
-      Config.storage.public_url(@persisted_path)
+      @uploader_klass.storage.public_url(@persisted_path)
     end
 
     def ==(another_file)
@@ -111,7 +111,7 @@ module Saviour
       temp_file.binmode
 
       begin
-        Config.storage.read_to_file(@persisted_path, temp_file)
+        @uploader_klass.storage.read_to_file(@persisted_path, temp_file)
 
         yield(temp_file)
       ensure
@@ -154,13 +154,13 @@ module Saviour
 
           case source_type
             when :stream
-              Config.storage.write(contents, path)
+              @uploader_klass.storage.write(contents, path)
             when :file
-              Config.storage.write_from_file(contents, path)
+              @uploader_klass.storage.write_from_file(contents, path)
           end
 
           @persisted_path = path
-          @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path))
+          @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass))
           path
         end
       end

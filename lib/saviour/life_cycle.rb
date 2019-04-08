@@ -14,7 +14,7 @@ module Saviour
         return unless @new_path
 
         DbHelpers.run_after_rollback(@connection) do
-          Config.storage.delete(@new_path)
+          uploader.storage.delete(@new_path)
         end
 
         [@column, @new_path]
@@ -37,14 +37,14 @@ module Saviour
         dup_temp_path = SecureRandom.hex
 
         dup_file = proc do
-          Config.storage.cp @current_path, dup_temp_path
+          uploader.storage.cp @current_path, dup_temp_path
 
           DbHelpers.run_after_commit(@connection) do
-            Config.storage.delete dup_temp_path
+            uploader.storage.delete dup_temp_path
           end
 
           DbHelpers.run_after_rollback(@connection) do
-            Config.storage.mv dup_temp_path, @current_path
+            uploader.storage.mv dup_temp_path, @current_path
           end
         end
 
@@ -56,14 +56,14 @@ module Saviour
 
         if @current_path && @current_path != @new_path
           DbHelpers.run_after_commit(@connection) do
-            Config.storage.delete(@current_path)
+            uploader.storage.delete(@current_path)
           end
         end
 
         # Delete the newly uploaded file only if it's an update in a different path
         if @current_path.nil? || @current_path != @new_path
           DbHelpers.run_after_rollback(@connection) do
-            Config.storage.delete(@new_path)
+            uploader.storage.delete(@new_path)
           end
         end
 
@@ -88,9 +88,10 @@ module Saviour
 
         futures = attached_files.map do |column|
           Concurrent::Future.execute(executor: pool) {
-            path = @model.send(column).persisted_path
-            Config.storage.delete(path) if path
-            @model.send(column).delete
+            file = @model.send(column)
+            path = file.persisted_path
+            file.uploader.storage.delete(path) if path
+            file.delete
           }
         end
 

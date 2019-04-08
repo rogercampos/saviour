@@ -96,7 +96,8 @@ module Saviour
               send(attach_as).delete
 
               work = proc do
-                Config.storage.delete(deletion_path) if deletion_path && send(attach_as).persisted_path.nil?
+                file = send(attach_as)
+                file.uploader.storage.delete(deletion_path) if deletion_path && file.persisted_path.nil?
               end
 
               if ActiveRecord::Base.connection.current_transaction.open?
