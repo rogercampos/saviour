@@ -117,8 +117,8 @@ describe "CRUD" do
         expected_query = %Q{UPDATE "tests" SET "file" = '/store/dir/file.txt', "file_thumb" = '/store/dir/file.txt'}
         expect_to_yield_queries(count: 2, including: [expected_query]) do
           klass.create!(
-            file: Saviour::StringSource.new("foo", "file.txt"),
-            file_thumb: Saviour::StringSource.new("foo", "file.txt")
+              file: Saviour::StringSource.new("foo", "file.txt"),
+              file_thumb: Saviour::StringSource.new("foo", "file.txt")
           )
         end
       end
@@ -188,6 +188,31 @@ describe "CRUD" do
       end
     end
 
+    describe "touch updated_at" do
+      it "touches updated_at if the model has it" do
+        time = Time.now - 4.years
+        a = klass.create! updated_at: time
+        a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+
+        expect(a.updated_at).to be > time + 2.years
+      end
+
+      context do
+        let(:klass) {
+          a = Class.new(TestNoTimestamp) { include Saviour::Model }
+          a.attach_file :file, uploader
+          a
+        }
+
+        it "works with models that do not have updated_at" do
+          a = klass.create!
+          expect(a).not_to respond_to(:updated_at)
+          a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+          expect(a.file.read).to eq "foo"
+        end
+      end
+    end
+
     context do
       let(:klass) {
         a = Class.new(Test) { include Saviour::Model }
@@ -202,8 +227,8 @@ describe "CRUD" do
         expected_query = %Q{UPDATE "tests" SET "file" = '/store/dir/file.txt', "file_thumb" = '/store/dir/file.txt'}
         expect_to_yield_queries(count: 1, including: [expected_query]) do
           a.update_attributes!(
-            file: Saviour::StringSource.new("foo", "file.txt"),
-            file_thumb: Saviour::StringSource.new("foo", "file.txt")
+              file: Saviour::StringSource.new("foo", "file.txt"),
+              file_thumb: Saviour::StringSource.new("foo", "file.txt")
           )
         end
       end
