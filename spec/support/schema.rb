@@ -10,4 +10,9 @@ ActiveRecord::Schema.define do
     t.integer :size_file_thumb
     t.timestamps null: false
   end
+
+  create_table :test_no_timestamps do |t|
+    t.string :file
+    t.string :name
+  end
 end

@@ -49,7 +49,7 @@ module Saviour
         end
 
         @new_path = @file.write(
-          before_write: ->(path) { dup_file.call if @current_path == path }
+            before_write: ->(path) { dup_file.call if @current_path == path }
         )
 
         return unless @new_path
@@ -112,22 +112,22 @@ module Saviour
     end
 
     def update!
-      process_upload(FileUpdater)
+      process_upload(FileUpdater, touch: true)
     end
 
     private
 
-    def process_upload(klass)
+    def process_upload(klass, touch: false)
       persistence_layer = @persistence_klass.new(@model)
 
       uploaders = attached_files.map do |column|
         next unless @model.send(column).changed?
 
         klass.new(
-          persistence_layer.read(column),
-          @model.send(column),
-          column,
-          ActiveRecord::Base.connection
+            persistence_layer.read(column),
+            @model.send(column),
+            column,
+            ActiveRecord::Base.connection
         )
       end.compact
 
@@ -159,6 +159,11 @@ module Saviour
         uploader.class.after_upload_hooks.each do |hook|
           uploader.instance_exec(uploader.stashed, &hook)
         end
+      end
+
+      if attrs.length > 0 && touch && @model.class.record_timestamps
+        touches = @model.class.send(:timestamp_attributes_for_update_in_model).map { |x| [x, Time.current] }.to_h
+        attrs.merge!(touches)
       end
 
       persistence_layer.write_attrs(attrs) if attrs.length > 0

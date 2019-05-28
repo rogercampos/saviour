@@ -55,7 +55,6 @@ describe "stash data on process" do
       store_dir { "/store/dir" }
 
       process_with_file do |file, filename|
-        # same ':size' key in the stash
         stash(size: File.size(file.path))
 
         [file, filename]
