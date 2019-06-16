@@ -95,6 +95,10 @@ module Saviour
         Dir.rmdir(real_path(basedir))
         basedir = ::File.dirname(basedir)
       end
+
+        # Concurrent executions of deletions may have already deleted the folder
+    rescue Errno::ENOENT
+      nil
     end
   end
 end
