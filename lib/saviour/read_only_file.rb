@@ -1,6 +1,6 @@
 module Saviour
   class ReadOnlyFile
-    attr_reader :persisted_path
+    attr_reader :persisted_path, :storage
 
     def initialize(persisted_path, storage)
       @persisted_path = persisted_path

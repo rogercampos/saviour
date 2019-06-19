@@ -2,13 +2,13 @@ require 'securerandom'
 
 module Saviour
   class File
-    attr_reader :persisted_path
-    attr_reader :source
+    attr_reader :persisted_path, :source, :storage
 
     def initialize(uploader_klass, model, attached_as, persisted_path = nil)
       @uploader_klass, @model, @attached_as = uploader_klass, model, attached_as
       @source_was = @source = nil
       @persisted_path = persisted_path
+      @storage = @uploader_klass.storage
 
       if persisted_path
         @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass.storage))
@@ -16,12 +16,12 @@ module Saviour
     end
 
     def exists?
-      persisted? && @uploader_klass.storage.exists?(@persisted_path)
+      persisted? && @storage.exists?(@persisted_path)
     end
 
     def read
       return nil unless persisted?
-      @uploader_klass.storage.read(@persisted_path)
+      @storage.read(@persisted_path)
     end
 
     def delete
@@ -32,7 +32,7 @@ module Saviour
 
     def public_url
       return nil unless persisted?
-      @uploader_klass.storage.public_url(@persisted_path)
+      @storage.public_url(@persisted_path)
     end
 
     def ==(another_file)
@@ -111,7 +111,7 @@ module Saviour
       temp_file.binmode
 
       begin
-        @uploader_klass.storage.read_to_file(@persisted_path, temp_file)
+        @storage.read_to_file(@persisted_path, temp_file)
 
         yield(temp_file)
       ensure
@@ -154,13 +154,13 @@ module Saviour
 
           case source_type
             when :stream
-              @uploader_klass.storage.write(contents, path)
+              @storage.write(contents, path)
             when :file
-              @uploader_klass.storage.write_from_file(contents, path)
+              @storage.write_from_file(contents, path)
           end
 
           @persisted_path = path
-          @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass.storage))
+          @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @storage))
           path
         end
       end
