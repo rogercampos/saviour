@@ -12,6 +12,8 @@ module Saviour
       @klass.attached_files = []
       @klass.class_attribute :followers_per_leader_config
       @klass.followers_per_leader_config = {}
+      @klass.class_attribute :uploader_classes
+      @klass.uploader_classes = {}
 
       persistence_klass = @persistence_klass
 
@@ -36,10 +38,13 @@ module Saviour
           raise ConfigurationError, "you must provide either an UploaderClass or a block to define it."
         end
 
+        uploader_klass = Class.new(Saviour::BaseUploader, &block) if block
+
+        self.uploader_classes[attach_as] = uploader_klass
+
         mod = Module.new do
           define_method(attach_as) do
             instance_variable_get("@__uploader_#{attach_as}") || begin
-              uploader_klass = Class.new(Saviour::BaseUploader, &block) if block
               layer = persistence_klass.new(self)
               new_file = ::Saviour::File.new(uploader_klass, self, attach_as, layer.read(attach_as))
 
