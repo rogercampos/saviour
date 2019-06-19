@@ -11,7 +11,7 @@ module Saviour
       @persisted_path = persisted_path
 
       if persisted_path
-        @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass))
+        @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass.storage))
       end
     end
 
@@ -160,7 +160,7 @@ module Saviour
           end
 
           @persisted_path = path
-          @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass))
+          @model.instance_variable_set("@__uploader_#{@attached_as}_was", ReadOnlyFile.new(persisted_path, @uploader_klass.storage))
           path
         end
       end

@@ -2,23 +2,23 @@ module Saviour
   class ReadOnlyFile
     attr_reader :persisted_path
 
-    def initialize(persisted_path, uploader_klass)
+    def initialize(persisted_path, storage)
       @persisted_path = persisted_path
-      @uploader_klass = uploader_klass
+      @storage = storage
     end
 
     def exists?
-      persisted? && @uploader_klass.storage.exists?(@persisted_path)
+      persisted? && @storage.exists?(@persisted_path)
     end
 
     def read
       return nil unless persisted?
-      @uploader_klass.storage.read(@persisted_path)
+      @storage.read(@persisted_path)
     end
 
     def public_url
       return nil unless persisted?
-      @uploader_klass.storage.public_url(@persisted_path)
+      @storage.public_url(@persisted_path)
     end
     alias_method :url, :public_url
 

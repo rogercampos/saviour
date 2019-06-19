@@ -817,10 +817,13 @@ as in the processor's case.
 
 ### Introspection
 
-Two methods are added to any class including `Saviour::Model` to give you information about what attachments
+Three methods are added to any class including `Saviour::Model` to give you information about what attachments
 have been defined in that class.
 
 `Model.attached_files` will give an array of symbols, representing all the attachments declared in that class.
+
+`Model.uploader_classes` will give you a hash with all the uploader classes being used in that model, key-ed by
+the name of each attachment.
 
 `Model.attached_followers_per_leader` will give a hash where the keys are attachments that have versions
 assigned, and the values being an array of symbols, representing the attachments that are following that attachment.
@@ -837,6 +840,7 @@ end
 
 Post.attached_files # => [:image, :image_thumb, :image_thumb_2, :cover]
 Post.attached_followers_per_leader # => { image: [:image_thumb, :image_thumb_2] }
+Post.uploader_classes # => { image: SomeUploader, image_thumb: SomeUploader, ... }
 ```
 
 
@@ -962,6 +966,38 @@ If the given path does not correspond with an existing file, in the case of `rea
 
 Any additional information the storage may require can be provided on instance creation (on `initialize`) since
 this is not used by Saviour.
+
+
+### Using `ReadOnlyFile`
+
+Sometimes you may find the need to have a saviour `File`-like object but you don't have the original model available.
+
+For example, if you're working directly fetching data from database, you have the `path` to an asset but you're not
+loading an ActiveRecord object.
+
+In such cases you can use the class `ReadOnlyFile`, like this:
+
+```ruby
+class Product
+  # ...
+  attach_file :image
+end
+
+my_cheap_products = ActiveRecord::Base.connection.select_all "select image, ... from products"
+
+# In this case, you have the path to the assets and want to convert it into an object so that the
+# rest of the application can work normally with it, you can do:
+ 
+storage = Product.uploader_classes[:image].storage
+file = Saviour::ReadOnlyFile.new(path, storage) 
+
+file.read # -> contents
+file.public_url # -> url
+# etc ...
+```
+
+You'll need to get the appropriate storage object from the same uploader that attachment is using, 
+and create a new `ReadOnlyFile` instance only with the asset's path and the storage.
 
 
 ### Bypassing Saviour

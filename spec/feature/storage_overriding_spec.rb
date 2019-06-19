@@ -8,7 +8,7 @@ describe "uploader declaration" do
     )
   end
 
-  let!(:custom_storage) do
+  let!(:another_storage) do
     Saviour::LocalStorage.new(
       local_prefix: @tmpdir,
       public_url_prefix: "http://custom-domain.com"
@@ -19,7 +19,7 @@ describe "uploader declaration" do
 
   it "lets you override storage on attachment basis" do
     klass = Class.new(Test) { include Saviour::Model }
-    kustom_storage = custom_storage
+    custom_storage = another_storage
 
     klass.attach_file(:file) do
       store_dir { "/store/dir" }
@@ -27,7 +27,7 @@ describe "uploader declaration" do
 
     klass.attach_file(:file_thumb) do
       store_dir { "/store/dir" }
-      with_storage kustom_storage
+      with_storage custom_storage
     end
 
     a = klass.create!(
