@@ -8,7 +8,7 @@ module Saviour
     end
 
     def exists?
-      persisted? && Config.storage.exists?(@persisted_path)
+      persisted? && @uploader_klass.storage.exists?(@persisted_path)
     end
 
     def read
