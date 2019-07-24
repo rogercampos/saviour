@@ -11,6 +11,7 @@ module Saviour
     def initialize(conf = {})
       @bucket = conf.delete(:bucket)
       @public_url_prefix = conf.delete(:public_url_prefix)
+      @extra_aws_client_options = conf.delete(:aws_client_opts)
       @conf = conf
       @create_options = conf.delete(:create_options) { {} }
       conf.fetch(:aws_access_key_id) { raise(ArgumentError, "aws_access_key_id is required") }
@@ -119,9 +120,11 @@ module Saviour
 
     def client
       @client ||= Aws::S3::Client.new(
-        access_key_id: @conf[:aws_access_key_id],
-        secret_access_key: @conf[:aws_secret_access_key],
-        region: @region
+        {
+          access_key_id: @conf[:aws_access_key_id],
+          secret_access_key: @conf[:aws_secret_access_key],
+          region: @region
+        }.merge(@extra_aws_client_options || {})
       )
     end
   end
