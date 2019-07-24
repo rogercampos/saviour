@@ -79,6 +79,8 @@ module Saviour
 
       def storage
         @storage ||= Config.storage
+
+        @storage.respond_to?(:call) ? @storage.call : @storage
       end
 
       def process(name = nil, opts = {}, type = :memory, &block)
