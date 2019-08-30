@@ -116,7 +116,7 @@ describe "remove attachment" do
         expect(Saviour::Config.storage.exists?(path)).to be_truthy
         expect(Saviour::Config.storage.read(path)).to eq "Some contents"
 
-        a.update_attributes!(file: Saviour::StringSource.new("Other contents", "filename.txt"))
+        a.update!(file: Saviour::StringSource.new("Other contents", "filename.txt"))
         expect(a.file.persisted?).to be_truthy
         expect(a.file.read).to eq "Other contents"
         expect(Saviour::Config.storage.exists?(path)).to be_truthy

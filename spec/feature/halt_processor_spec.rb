@@ -23,7 +23,7 @@ describe "halt processor behavior" do
 
     expect(Saviour::Config.storage).to_not receive(:write)
 
-    a.update_attributes! file: StringIO.new("contents")
+    a.update! file: StringIO.new("contents")
     expect(a.reload.read_attribute(:file)).to be_nil
   end
 

@@ -88,7 +88,7 @@ describe "processor's API" do
       a = klass.create!
 
       expect {
-        a.update_attributes! file: Saviour::StringSource.new("contents", "filename.txt")
+        a.update! file: Saviour::StringSource.new("contents", "filename.txt")
       }.to raise_error.with_message("custom problem!")
     end
 

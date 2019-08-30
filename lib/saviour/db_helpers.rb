@@ -22,6 +22,9 @@ module Saviour
       def committed!(*)
         @block.call
       end
+
+      def trigger_transactional_callbacks?(*)
+      end
     end
 
     class RollbackDummy
@@ -41,6 +44,9 @@ module Saviour
       end
 
       def committed!(*)
+      end
+
+      def trigger_transactional_callbacks?(*)
       end
     end
 

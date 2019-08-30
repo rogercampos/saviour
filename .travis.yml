@@ -2,15 +2,13 @@ language: ruby
 sudo: false
 cache: bundler
 rvm:
-  - 2.2.8
-  - 2.3.5
-  - 2.4.2
   - 2.5.0
   - 2.6.0
 
 gemfile:
   - gemfiles/5.1.gemfile
   - gemfiles/5.2.gemfile
+  - gemfiles/6.0.gemfile
 
 addons:
   code_climate:

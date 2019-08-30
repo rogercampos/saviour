@@ -13,7 +13,7 @@ Gem::Specification.new do |spec|
   spec.files         = `git ls-files`.split($/)
   spec.require_paths = ["lib"]
 
-  spec.required_ruby_version = ">= 2.2.0"
+  spec.required_ruby_version = ">= 2.5.0"
 
   spec.add_dependency "activerecord", ">= 5.1"
   spec.add_dependency "activesupport", ">= 5.1"
@@ -23,7 +23,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "sqlite3"
-  spec.add_development_dependency "appraisal"
   spec.add_development_dependency "aws-sdk-s3"
   spec.add_development_dependency "mime-types"
   spec.add_development_dependency "get_process_mem"

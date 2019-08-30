@@ -593,7 +593,7 @@ Now, both attachments are independent:
 
 ```ruby
 # `image_thumb` can be changed independently
-a.update_attributes! image_thumb: File.open("/path/another_file.png")
+a.update! image_thumb: File.open("/path/another_file.png")
 
 # or removed
 a.remove_file_thumb!
@@ -714,7 +714,7 @@ class ImageUploader < Saviour::BaseUploader
   end
 
   after_upload do |stash|
-    model.update_attributes!(size: stash[:size], width: stash[:width], height: stash[:height])
+    model.update!(size: stash[:size], width: stash[:width], height: stash[:height])
   end
 end
 ```
@@ -1132,7 +1132,7 @@ Then it can be used as:
 a = Post.find(42)
 
 # Params received from a form
-a.update_attributes(remove_image: "t")
+a.update(remove_image: "t")
 ```
 
 
@@ -1172,7 +1172,7 @@ The job then should take the model and the attachment to process and run the pro
 a = Post.find(42)
 a.image.with_copy do |f|
   # manipulate f as desired
-  a.update_attributes! image: f
+  a.update! image: f
 end
 ```
 

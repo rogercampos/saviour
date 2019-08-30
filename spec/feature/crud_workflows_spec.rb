@@ -19,14 +19,14 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example|
         a = klass.create!
-        expect(a.update_attributes(file: example)).to be_truthy
+        expect(a.update(file: example)).to be_truthy
       end
     end
 
     it do
       with_test_file("example.xml") do |example|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
 
         expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
       end
@@ -35,7 +35,7 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example, real_filename|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
         expect(a[:file]).to eq "/store/dir/#{real_filename}"
       end
     end
@@ -43,7 +43,7 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
 
         example.rewind
         expect(a.file.read).to eq example.read
@@ -53,7 +53,7 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
 
         expect(a.file.exists?).to be_truthy
       end
@@ -62,7 +62,7 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example, real_filename|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
 
         expect(a.file.filename).to eq real_filename
       end
@@ -71,7 +71,7 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example, real_filename|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
 
         expect(a.file.url).to eq "http://domain.com/store/dir/#{real_filename}"
         expect(a.file.public_url).to eq a.file.url
@@ -137,7 +137,7 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
         expect(a.file.exists?).to be_truthy
         expect(a.destroy).to be_truthy
 
@@ -150,13 +150,13 @@ describe "CRUD" do
     it do
       with_test_file("example.xml") do |example|
         a = klass.create!
-        a.update_attributes(file: example)
+        a.update(file: example)
 
         expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
         previous_location = a[:file]
 
         with_test_file("camaloon.jpg") do |example_2|
-          a.update_attributes(file: example_2)
+          a.update(file: example_2)
           expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
 
           expect(Saviour::Config.storage.exists?(previous_location)).to be_falsey
@@ -167,7 +167,7 @@ describe "CRUD" do
     it "does allow to update the same file to another contents in the same path" do
       a = klass.create! file: Saviour::StringSource.new("contents", "file.txt")
 
-      a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+      a.update! file: Saviour::StringSource.new("foo", "file.txt")
       expect(Saviour::Config.storage.read(a[:file])).to eq "foo"
     end
 
@@ -175,7 +175,7 @@ describe "CRUD" do
       a = klass.create!
 
       expect_to_yield_queries(count: 1) do
-        a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+        a.update! file: Saviour::StringSource.new("foo", "file.txt")
       end
     end
 
@@ -183,7 +183,7 @@ describe "CRUD" do
       a = klass.create!
 
       expect_to_yield_queries(count: 2) do
-        a.update_attributes! name: "Text",
+        a.update! name: "Text",
                              file: Saviour::StringSource.new("foo", "file.txt")
       end
     end
@@ -192,7 +192,7 @@ describe "CRUD" do
       it "touches updated_at if the model has it" do
         time = Time.now - 4.years
         a = klass.create! updated_at: time
-        a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+        a.update! file: Saviour::StringSource.new("foo", "file.txt")
 
         expect(a.updated_at).to be > time + 2.years
       end
@@ -207,7 +207,7 @@ describe "CRUD" do
         it "works with models that do not have updated_at" do
           a = klass.create!
           expect(a).not_to respond_to(:updated_at)
-          a.update_attributes! file: Saviour::StringSource.new("foo", "file.txt")
+          a.update! file: Saviour::StringSource.new("foo", "file.txt")
           expect(a.file.read).to eq "foo"
         end
       end
@@ -226,7 +226,7 @@ describe "CRUD" do
 
         expected_query = %Q{UPDATE "tests" SET "file" = '/store/dir/file.txt', "file_thumb" = '/store/dir/file.txt'}
         expect_to_yield_queries(count: 1, including: [expected_query]) do
-          a.update_attributes!(
+          a.update!(
               file: Saviour::StringSource.new("foo", "file.txt"),
               file_thumb: Saviour::StringSource.new("foo", "file.txt")
           )

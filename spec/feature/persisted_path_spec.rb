@@ -11,7 +11,7 @@ describe "persisted path" do
 
       with_test_file("example.xml") do |example|
         a = klass.create!
-        expect(a.update_attributes(file: example)).to be_truthy
+        expect(a.update(file: example)).to be_truthy
         expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
         expect(File.dirname(a[:file])).to eq "/store/dir"
 
@@ -20,7 +20,7 @@ describe "persisted path" do
 
         with_test_file("camaloon.jpg") do |example_2|
           b = klass.create!
-          expect(b.update_attributes(file: example_2)).to be_truthy
+          expect(b.update(file: example_2)).to be_truthy
 
           expect(Saviour::Config.storage.exists?(b[:file])).to be_truthy
           expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
