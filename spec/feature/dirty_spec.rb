@@ -14,7 +14,7 @@ describe "dirty model" do
 
     with_test_file("example.xml") do |xml_file|
       with_test_file("camaloon.jpg") do |jpg_file|
-        a.update_attributes! file: xml_file
+        a.update! file: xml_file
 
         expect(a.changed_attributes).to eq({})
 

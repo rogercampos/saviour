@@ -12,7 +12,7 @@ describe "reload" do
       b = klass.find(a.id)
 
       with_test_file("example.xml") do |example|
-        a.update_attributes! file: example
+        a.update! file: example
         expect(a.file.exists?).to be_truthy
         expect(b.file.exists?).to be_falsey
 

@@ -14,7 +14,7 @@ describe "stash data on process" do
       end
 
       after_upload do |stash|
-        model.update_attributes!(file_size: stash[:file_size])
+        model.update!(file_size: stash[:file_size])
       end
     }
 
@@ -23,7 +23,7 @@ describe "stash data on process" do
 
     a = klass.create!
 
-    a.update_attributes! file: Saviour::StringSource.new("a" * 74, "file.txt")
+    a.update! file: Saviour::StringSource.new("a" * 74, "file.txt")
     expect(a.file_size).to eq 74
   end
 
@@ -38,7 +38,7 @@ describe "stash data on process" do
       end
 
       after_upload do |stash|
-        model.update_attributes!(file_size: stash[:file_size])
+        model.update!(file_size: stash[:file_size])
       end
     }
 
@@ -61,7 +61,7 @@ describe "stash data on process" do
       end
 
       after_upload do |stash|
-        model.update_attributes!("size_#{attached_as}" => stash[:size])
+        model.update!("size_#{attached_as}" => stash[:size])
       end
     }
 
@@ -74,7 +74,7 @@ describe "stash data on process" do
     # - 2 queries to update size
     # - 1 query to assign stored paths
     expect_to_yield_queries(count: 3) do
-      a.update_attributes! file: Saviour::StringSource.new("a" * 74, "file.txt"),
+      a.update! file: Saviour::StringSource.new("a" * 74, "file.txt"),
                            file_thumb: Saviour::StringSource.new("a" * 31, "file_2.txt")
     end
 
@@ -99,7 +99,7 @@ describe "stash data on process" do
       end
 
       after_upload do |stash|
-        model.update_attributes!(stash[:model])
+        model.update!(stash[:model])
       end
     }
 
@@ -123,11 +123,11 @@ describe "stash data on process" do
       end
 
       after_upload do |stash|
-        model.update_attributes!(file_size: stash[:file_size])
+        model.update!(file_size: stash[:file_size])
       end
 
       after_upload do |stash|
-        model.update_attributes!(name: stash[:name])
+        model.update!(name: stash[:name])
       end
     }
 

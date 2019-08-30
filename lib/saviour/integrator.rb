@@ -84,6 +84,22 @@ module Saviour
             end
           end
 
+          define_method(:changed) do
+            if ActiveRecord::VERSION::MAJOR == 6 && send("#{attach_as}_changed?")
+              super() + [attach_as.to_s]
+            else
+              super()
+            end
+          end
+
+          define_method(:changed?) do
+            if ActiveRecord::VERSION::MAJOR == 6
+              send("#{attach_as}_changed?") || super()
+            else
+              super()
+            end
+          end
+
           define_method("#{attach_as}_change") do
             [send("#{attach_as}_was"), send(attach_as)]
           end

@@ -52,7 +52,7 @@ describe "concurrency on operations" do
 
       Saviour::Config.concurrent_workers = 4
 
-      a.update_attributes! file: Saviour::StringSource.new("contents", "file.txt"),
+      a.update! file: Saviour::StringSource.new("contents", "file.txt"),
                            file_thumb: Saviour::StringSource.new("contents", "file_2.txt"),
                            file_thumb_2: Saviour::StringSource.new("contents", "file_3.txt"),
                            file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
@@ -66,7 +66,7 @@ describe "concurrency on operations" do
 
       Saviour::Config.concurrent_workers = 1
 
-      a.update_attributes! file: Saviour::StringSource.new("contents", "file.txt"),
+      a.update! file: Saviour::StringSource.new("contents", "file.txt"),
                            file_thumb: Saviour::StringSource.new("contents", "file_2.txt"),
                            file_thumb_2: Saviour::StringSource.new("contents", "file_3.txt"),
                            file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")
@@ -80,7 +80,7 @@ describe "concurrency on operations" do
 
       Saviour::Config.concurrent_workers = 2
 
-      a.update_attributes! file: Saviour::StringSource.new("contents", "file.txt"),
+      a.update! file: Saviour::StringSource.new("contents", "file.txt"),
                            file_thumb: Saviour::StringSource.new("contents", "file_2.txt"),
                            file_thumb_2: Saviour::StringSource.new("contents", "file_3.txt"),
                            file_thumb_3: Saviour::StringSource.new("contents", "file_4.txt")

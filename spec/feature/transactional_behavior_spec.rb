@@ -87,7 +87,7 @@ describe "transactional behavior" do
 
         with_test_file("camaloon.jpg") do |file2|
           ActiveRecord::Base.transaction do
-            a.update_attributes! file: file2
+            a.update! file: file2
 
             expect(Saviour::Config.storage.exists?(path1)).to be_truthy
             expect(Saviour::Config.storage.exists?(a[:file])).to be_truthy
@@ -107,7 +107,7 @@ describe "transactional behavior" do
 
         with_test_file("camaloon.jpg") do |file2|
           ActiveRecord::Base.transaction do
-            a.update_attributes! file: file2
+            a.update! file: file2
             path2 = a[:file]
 
             expect(Saviour::Config.storage.exists?(path1)).to be_truthy
@@ -135,7 +135,7 @@ describe "transactional behavior" do
       expect(Saviour::Config.storage.read(a[:file])).to eq "original content"
 
       ActiveRecord::Base.transaction do
-        a.update_attributes! file: Saviour::StringSource.new("new content", "file.txt")
+        a.update! file: Saviour::StringSource.new("new content", "file.txt")
         expect(Saviour::Config.storage.read(a[:file])).to eq "new content"
         raise ActiveRecord::Rollback
       end

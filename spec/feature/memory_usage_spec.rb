@@ -9,8 +9,6 @@ describe "memory usage" do
     a
   }
 
-  CHUNK = ("A" * 1024).freeze
-
   let(:size_to_test) { 10 } # Test with 10Mb files
 
   def with_tempfile
@@ -18,7 +16,7 @@ describe "memory usage" do
 
     size_to_test.times do
       1024.times do
-        f.write CHUNK
+        f.write SecureRandom.hex(512)
       end
     end
     f.flush
@@ -56,7 +54,7 @@ describe "memory usage" do
         with_no_gc do
           base_line = GetProcessMem.new.mb
 
-          a.update_attributes! file: f
+          a.update! file: f
 
           # Expect memory usage to grow below 10% of the file size
           expect(GetProcessMem.new.mb - base_line).to be < size_to_test / 10
@@ -72,22 +70,22 @@ describe "memory usage" do
 
         process do |contents, filename|
           digest = Digest::MD5.hexdigest(contents)
+
           [contents, "#{digest}-#{filename}"]
         end
       }
     }
 
     it do
-      a = base_klass.create!
-
       with_tempfile do |f|
         with_no_gc do
+          a = base_klass.create!
+
           base_line = GetProcessMem.new.mb
 
-          a.update_attributes! file: f
-
-          # Expect memory usage to grow at least the size of the file
-          expect(GetProcessMem.new.mb - base_line).to be > size_to_test
+          a.update! file: f
+          # Expect memory usage to grow at least half the file size
+          expect(GetProcessMem.new.mb - base_line).to be >= size_to_test / 2
         end
       end
     end
