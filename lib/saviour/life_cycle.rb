@@ -49,7 +49,7 @@ module Saviour
         end
 
         @new_path = @file.write(
-            before_write: ->(path) { dup_file.call if @current_path == path }
+          before_write: ->(path) { dup_file.call if @current_path == path }
         )
 
         return unless @new_path
@@ -124,17 +124,18 @@ module Saviour
         next unless @model.send(column).changed?
 
         klass.new(
-            persistence_layer.read(column),
-            @model.send(column),
-            column,
-            ActiveRecord::Base.connection
+          persistence_layer.read(column),
+          @model.send(column),
+          column,
+          ActiveRecord::Base.connection
         )
       end.compact
 
       pool = Concurrent::FixedThreadPool.new(Saviour::Config.concurrent_workers)
+
       futures = uploaders.map { |uploader|
         Concurrent::Future.execute(executor: pool) {
-          if defined?(Rails)
+          if defined?(Rails) && Rails::VERSION::MAJOR < 6
             Rails.application.executor.wrap { uploader.upload }
           else
             uploader.upload
@@ -142,13 +143,19 @@ module Saviour
         }
       }
 
-      result = ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
+      work = -> {
         futures.map do |x|
           x.value.tap do
             raise(x.reason) if x.rejected?
           end
         end.compact
-      end
+      }
+
+      result = if defined?(Rails) && Rails::VERSION::MAJOR < 6
+                 ActiveSupport::Dependencies.interlock.permit_concurrent_loads(&work)
+               else
+                 work.call
+               end
 
       pool.shutdown
       pool.wait_for_termination
