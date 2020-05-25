@@ -1,5 +1,7 @@
 module Saviour
   class LifeCycle
+    SHOULD_USE_INTERLOCK = defined?(Rails) && Gem::Version.create(Rails.version) < Gem::Version.create('5.2.4.3')
+
     class FileCreator
       def initialize(current_path, file, column, connection)
         @file = file
@@ -135,7 +137,7 @@ module Saviour
 
       futures = uploaders.map { |uploader|
         Concurrent::Future.execute(executor: pool) {
-          if defined?(Rails) && Rails::VERSION::MAJOR < 6
+          if SHOULD_USE_INTERLOCK
             Rails.application.executor.wrap { uploader.upload }
           else
             uploader.upload
@@ -151,7 +153,7 @@ module Saviour
         end.compact
       }
 
-      result = if defined?(Rails) && Rails::VERSION::MAJOR < 6
+      result = if SHOULD_USE_INTERLOCK
                  ActiveSupport::Dependencies.interlock.permit_concurrent_loads(&work)
                else
                  work.call
