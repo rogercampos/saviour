@@ -17,7 +17,8 @@ require 'saviour/db_helpers'
 
 require 'tempfile'
 require 'fileutils'
-require 'concurrent/future'
+require 'concurrent/edge/throttle'
+require 'concurrent/edge/lock_free_queue'
 
 require 'active_support/dependencies'
 

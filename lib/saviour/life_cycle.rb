@@ -1,6 +1,6 @@
 module Saviour
   class LifeCycle
-    SHOULD_USE_INTERLOCK = defined?(Rails) && Gem::Version.create(Rails.version) < Gem::Version.create('5.2.4.3')
+    SHOULD_USE_INTERLOCK = defined?(Rails)
 
     class FileCreator
       def initialize(current_path, file, column, connection)
@@ -86,26 +86,19 @@ module Saviour
 
     def delete!
       DbHelpers.run_after_commit do
-        pool = Concurrent::FixedThreadPool.new(Saviour::Config.concurrent_workers)
+        pool = Concurrent::Throttle.new Saviour::Config.concurrent_workers
 
         futures = attached_files.map do |column|
-          Concurrent::Future.execute(executor: pool) {
-            file = @model.send(column)
+          pool.future(@model.send(column)) do |file|
             path = file.persisted_path
             file.uploader.storage.delete(path) if path
             file.delete
-          }
-        end
-
-        ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
-          futures.each do |future|
-            future.value
-            raise(future.reason) if future.rejected?
           end
         end
 
-        pool.shutdown
-        pool.wait_for_termination
+        ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
+          futures.each(&:value!)
+        end
       end
     end
 
@@ -133,34 +126,25 @@ module Saviour
         )
       end.compact
 
-      pool = Concurrent::FixedThreadPool.new(Saviour::Config.concurrent_workers)
+      pool = Concurrent::Throttle.new Saviour::Config.concurrent_workers
 
       futures = uploaders.map { |uploader|
-        Concurrent::Future.execute(executor: pool) {
+        pool.future(uploader) { |given_uploader|
           if SHOULD_USE_INTERLOCK
-            Rails.application.executor.wrap { uploader.upload }
+            Rails.application.executor.wrap { given_uploader.upload }
           else
-            uploader.upload
+            given_uploader.upload
           end
         }
       }
 
-      work = -> {
-        futures.map do |x|
-          x.value.tap do
-            raise(x.reason) if x.rejected?
-          end
-        end.compact
-      }
+      work = -> { futures.map(&:value!).compact }
 
       result = if SHOULD_USE_INTERLOCK
                  ActiveSupport::Dependencies.interlock.permit_concurrent_loads(&work)
                else
                  work.call
                end
-
-      pool.shutdown
-      pool.wait_for_termination
 
       attrs = result.to_h
 

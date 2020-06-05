@@ -18,6 +18,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "activerecord", ">= 5.1"
   spec.add_dependency "activesupport", ">= 5.1"
   spec.add_dependency "concurrent-ruby", ">= 1.0.5"
+  spec.add_dependency "concurrent-ruby-edge", ">= 0.6.0"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rspec"
