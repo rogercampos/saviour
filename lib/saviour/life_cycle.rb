@@ -1,6 +1,6 @@
 module Saviour
   class LifeCycle
-    SHOULD_USE_INTERLOCK = defined?(Rails) && Gem::Version.create(Rails.version) < Gem::Version.create('5.2.4.3')
+    SHOULD_USE_INTERLOCK = defined?(Rails)
 
     class FileCreator
       def initialize(current_path, file, column, connection)
