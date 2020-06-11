@@ -1,6 +1,6 @@
 module Saviour
   class LifeCycle
-    SHOULD_USE_INTERLOCK = defined?(Rails)
+    SHOULD_USE_INTERLOCK = defined?(Rails) && !Rails.env.test?
 
     class FileCreator
       def initialize(current_path, file, column, connection)
@@ -96,9 +96,7 @@ module Saviour
           end
         end
 
-        ActiveSupport::Dependencies.interlock.permit_concurrent_loads do
-          futures.each(&:value!)
-        end
+        futures.each(&:value!)
       end
     end
 
