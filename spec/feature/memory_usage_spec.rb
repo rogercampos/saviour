@@ -56,8 +56,7 @@ describe "memory usage" do
 
           a.update! file: f
 
-          # Expect memory usage to grow below 10% of the file size
-          expect(GetProcessMem.new.mb - base_line).to be < size_to_test / 10
+          expect(GetProcessMem.new.mb - base_line).to be < 3
         end
       end
     end

@@ -24,7 +24,7 @@ module Saviour
           if opts.empty?
             @uploader.send(method_or_block, data, filename)
           else
-            @uploader.send(method_or_block, data, filename, opts)
+            @uploader.send(method_or_block, data, filename, **opts)
           end
         end
       end
