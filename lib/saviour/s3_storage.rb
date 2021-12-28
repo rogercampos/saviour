@@ -3,6 +3,8 @@ begin
 rescue LoadError
 end
 
+require 'marcel'
+
 module Saviour
   class S3Storage
     MissingPublicUrlPrefix = Class.new(StandardError)
@@ -27,8 +29,12 @@ module Saviour
         raise(KeyTooLarge, "The key in S3 must be at max 1024 bytes, this key is too big: #{path}")
       end
 
+      mime_type = Marcel::MimeType.for file_or_contents
+
       # TODO: Use multipart api
-      client.put_object(@create_options.merge(body: file_or_contents, bucket: @bucket, key: path))
+      client.put_object(@create_options.merge(
+        body: file_or_contents, bucket: @bucket, key: path, content_type: mime_type
+      ))
     end
 
     def write_from_file(file, path)
